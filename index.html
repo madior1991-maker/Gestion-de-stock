@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2M GLOBAL SERVICES - Gestion de Stock, Facturation & Commandes</title>
+
+  <!-- Google Fonts & Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- Sidebar Navigation with Official 2M GLOBAL SERVICES Logo & Role Switcher -->
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="assets/logo.png" alt="2M GLOBAL SERVICES" style="height: 44px; object-fit: contain; background: #ffffff; padding: 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
+        <div class="brand-text">
+          <h2 style="font-size: 0.95rem; font-weight: 800; color: #0284c7; letter-spacing: 0;">2M GLOBAL</h2>
+          <span style="color: #f97316; font-weight: 700; font-size: 0.7rem; letter-spacing: 0.1em;">SERVICES</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <a href="#" class="nav-item active" data-view="dashboard">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Tableau de Bord</span>
+        </a>
+        <a href="#" class="nav-item" data-view="products">
+          <i class="fa-solid fa-box-open"></i>
+          <span>Inventaire & Produits</span>
+        </a>
+        <a href="#" class="nav-item" data-view="invoices">
+          <i class="fa-solid fa-file-invoice-dollar"></i>
+          <span>Factures & Ventes</span>
+        </a>
+        <a href="#" class="nav-item" data-view="purchase-orders">
+          <i class="fa-solid fa-file-contract"></i>
+          <span>Bons de Commande</span>
+        </a>
+        <a href="#" class="nav-item" data-view="movements">
+          <i class="fa-solid fa-right-left"></i>
+          <span>Mouvements de Stock</span>
+        </a>
+        <a href="#" class="nav-item" data-view="alerts">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>Alertes & Réappro.</span>
+          <span class="nav-badge" id="nav-alert-badge" style="display: none;">0</span>
+        </a>
+        <a href="#" class="nav-item" data-view="categories">
+          <i class="fa-solid fa-tags"></i>
+          <span>Catégories</span>
+        </a>
+        <a href="#" class="nav-item" data-view="reports">
+          <i class="fa-solid fa-file-export"></i>
+          <span>Rapports & Exports</span>
+        </a>
+        <a href="#" class="nav-item" data-view="settings" style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: 0.85rem;">
+          <i class="fa-solid fa-gear"></i>
+          <span>Paramètres & Rôles</span>
+        </a>
+      </nav>
+
+      <!-- Role-Based Profile Switcher -->
+      <div class="sidebar-footer">
+        <div class="user-profile" style="flex-direction: column; align-items: flex-start; gap: 0.4rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; width: 100%;">
+            <div class="user-avatar" style="background: linear-gradient(135deg, #0284c7, #f97316);">2M</div>
+            <div class="user-info" style="flex: 1;">
+              <span class="user-name" style="font-size: 0.82rem;">Session Utilisateur :</span>
+            </div>
+          </div>
+          <select id="user-role-select" class="form-control" style="width: 100%; padding: 0.3rem 0.5rem; font-size: 0.78rem; font-weight: 700; background: var(--bg-tertiary);" onchange="switchUserRole(this.value)">
+            <option value="ADMIN">👑 Administrateur Général</option>
+            <option value="MAGASINIER">📦 Magasinier / Stock</option>
+            <option value="VENDEUR">💼 Vendeur / Commercial</option>
+          </select>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace Area -->
+    <main class="main-content">
+
+      <!-- Topbar Header -->
+      <header class="topbar">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <button class="icon-btn" id="mobile-menu-btn" style="display: none;" title="Menu Navigation">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="topbar-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="global-search" placeholder="Recherche rapide (SKU, produit, facture)...">
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <!-- Notification Bell Icon -->
+          <button class="icon-btn" id="notif-bell-btn" onclick="toggleNotificationDrawer()" title="Centre de Notifications">
+            <i class="fa-solid fa-bell"></i>
+            <span class="nav-badge" id="notif-badge" style="position: absolute; top: -3px; right: -3px; padding: 0.1rem 0.35rem; font-size: 0.65rem;">0</span>
+          </button>
+
+          <!-- Notification Drawer Dropdown -->
+          <div class="notification-drawer" id="notification-drawer">
+            <div class="notification-header">
+              <h4 style="font-size: 0.9rem; color: var(--text-primary);"><i class="fa-solid fa-bell" style="color: var(--accent-primary);"></i> Centre de Notifications</h4>
+              <span style="font-size: 0.75rem; color: var(--text-muted); cursor: pointer;" onclick="toggleNotificationDrawer()">Fermer</span>
+            </div>
+            <div class="notification-list" id="notification-list">
+              <!-- Dynamic notifications -->
+            </div>
+          </div>
+
+          <button class="icon-btn" id="theme-toggle-btn" title="Basculer le Thème Clair / Sombre">
+            <i class="fa-solid fa-sun"></i>
+          </button>
+          <button class="btn-success" onclick="openNewInvoiceModal('DEFINITIVE')">
+            <i class="fa-solid fa-receipt"></i> + Nouvelle Vente
+          </button>
+          <button class="btn-primary" onclick="openProductModal()">
+            <i class="fa-solid fa-plus"></i> Nouveau Produit
+          </button>
+        </div>
+      </header>
+
+      <!-- Page Views -->
+      <div class="page-container">
+
+        <!-- VIEW 1: DASHBOARD -->
+        <section class="view-section active" id="view-dashboard">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Tableau de Bord Analytique</h1>
+              <p>Gestion d'inventaire et facturation <strong>2M GLOBAL SERVICES</strong>.</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn-secondary" onclick="openNewInvoiceModal('PROFORMA')">
+                <i class="fa-solid fa-file-lines"></i> Créer Proforma
+              </button>
+              <button class="btn-secondary" onclick="openNewInvoiceModal('DEFINITIVE')">
+                <i class="fa-solid fa-file-invoice-dollar"></i> Créer Facture
+              </button>
+              <button class="btn-primary" style="background: linear-gradient(135deg, #0284c7, #0369a1);" onclick="openExecutiveDashboardReport()">
+                <i class="fa-solid fa-file-invoice"></i> Rapport Financier A4
+              </button>
+            </div>
+          </div>
+
+          <!-- KPI Grid Cards -->
+          <div class="kpi-grid">
+            <div class="kpi-card kpi-primary">
+              <div class="kpi-data">
+                <h3>Valeur Totale du Stock</h3>
+                <div class="value" id="kpi-valuation">0 FCFA</div>
+                <div class="subtext"><i class="fa-solid fa-arrow-trend-up"></i> Prix d'achat d'inventaire</div>
+              </div>
+              <div class="kpi-icon"><i class="fa-solid fa-vault"></i></div>
+            </div>
+
+            <div class="kpi-card kpi-success">
+              <div class="kpi-data">
+                <h3>Références Totales</h3>
+                <div class="value" id="kpi-total-items">0</div>
+                <div class="subtext"><i class="fa-solid fa-layer-group"></i> Produits enregistrés</div>
+              </div>
+              <div class="kpi-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+            </div>
+
+            <div class="kpi-card kpi-warning">
+              <div class="kpi-data">
+                <h3>Alertes de Stock</h3>
+                <div class="value" id="kpi-alerts-count">0</div>
+                <div class="subtext"><i class="fa-solid fa-triangle-exclamation"></i> Stock d'alerte / critique</div>
+              </div>
+              <div class="kpi-icon"><i class="fa-solid fa-bell"></i></div>
+            </div>
+
+            <div class="kpi-card kpi-info">
+              <div class="kpi-data">
+                <h3>Mouvements Enregistrés</h3>
+                <div class="value" id="kpi-movements-month">0</div>
+                <div class="subtext"><i class="fa-solid fa-right-left"></i> Transaction(s) au total</div>
+              </div>
+              <div class="kpi-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            </div>
+          </div>
+
+          <!-- Charts & Top Sellers Grid -->
+          <div class="charts-grid">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title"><i class="fa-solid fa-chart-column" style="color: var(--accent-primary);"></i> Flux des Mouvements (Entrées vs Sorties)</h2>
+              </div>
+              <div class="chart-container">
+                <canvas id="movementChart"></canvas>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title"><i class="fa-solid fa-trophy" style="color: #f59e0b;"></i> Top 5 des Meilleures Ventes</h2>
+              </div>
+              <div id="top-sellers-list" style="display: flex; flex-direction: column; gap: 0.65rem;">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Priority Alert Table Widget -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title"><i class="fa-solid fa-triangle-exclamation" style="color: var(--warning);"></i> Réapprovisionnements Prioritaires</h2>
+              <button class="btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick="switchView('alerts')">
+                Voir toutes les alertes <i class="fa-solid fa-arrow-right"></i>
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Produit / SKU</th>
+                    <th>Stock Actuel / Seuil</th>
+                    <th>Statut</th>
+                    <th>Action Rapide</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboard-alerts-list">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 2: PRODUCTS CATALOG -->
+        <section class="view-section" id="view-products">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Catalogue & Inventaire des Produits</h1>
+              <p>Consultez, gérez et éditez l'ensemble de vos références d'articles.</p>
+            </div>
+            <button class="btn-primary" onclick="openProductModal()">
+              <i class="fa-solid fa-plus"></i> Ajouter un Produit
+            </button>
+          </div>
+
+          <!-- Filter Control Bar -->
+          <div class="filter-bar">
+            <div class="filter-group">
+              <input type="text" id="search-products" class="form-control" placeholder="Filtrer par nom, SKU..." style="min-width: 220px;" oninput="filterProducts()">
+              <select id="filter-category" class="form-control" onchange="filterProducts()">
+                <option value="ALL">Toutes les catégories</option>
+              </select>
+              <select id="filter-status" class="form-control" onchange="filterProducts()">
+                <option value="ALL">Tous les statuts</option>
+                <option value="OK">En stock suffisant</option>
+                <option value="LOW">Stock d'alerte / critique</option>
+                <option value="OUT">Rupture de stock</option>
+              </select>
+            </div>
+            <div>
+              <button class="btn-secondary" onclick="exportProductsCSV()">
+                <i class="fa-solid fa-file-csv"></i> Export CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- Products Table -->
+          <div class="card" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Visuel</th>
+                    <th>Produit & SKU</th>
+                    <th>Catégorie</th>
+                    <th>Quantité</th>
+                    <th>Prix HT / Vente</th>
+                    <th>Emplacement</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="products-table-body">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 3: INVOICES (FACTURES PROFORMA & DÉFINITIVES) -->
+        <section class="view-section" id="view-invoices">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Factures Proforma & Factures Définitives 2M GLOBAL SERVICES</h1>
+              <p>Créez des devis proforma ou des factures définitives. Format optimisé 1 page A4 avec QR Code d'authenticité.</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn-secondary" style="border-color: var(--info); color: var(--info);" onclick="openNewInvoiceModal('PROFORMA')">
+                <i class="fa-solid fa-file-lines"></i> + Créer Proforma
+              </button>
+              <button class="btn-success" onclick="openNewInvoiceModal('DEFINITIVE')">
+                <i class="fa-solid fa-receipt"></i> + Créer Facture Définitive
+              </button>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>N° Document</th>
+                    <th>Type Document</th>
+                    <th>Date</th>
+                    <th>Client</th>
+                    <th>Mode Règlement</th>
+                    <th>Montant Total TTC</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="invoices-table-body">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 4: PURCHASE ORDERS (BONS DE COMMANDE) -->
+        <section class="view-section" id="view-purchase-orders">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Bons de Commande Fournisseurs</h1>
+              <p>Générez des bons de commande et réapprovisionnez votre stock en 1 clic lors de la réception.</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn-primary" style="background: linear-gradient(135deg, var(--warning), #d97706);" onclick="generatePOFromLowStock()">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Générer depuis Alertes Stock
+              </button>
+              <button class="btn-primary" onclick="openNewPOModal()">
+                <i class="fa-solid fa-plus"></i> Nouveau Bon de Commande
+              </button>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>N° Bon Commande</th>
+                    <th>Date</th>
+                    <th>Fournisseur</th>
+                    <th>Articles</th>
+                    <th>Montant Total Est.</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="po-table-body">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 5: MOVEMENTS AUDIT LOG -->
+        <section class="view-section" id="view-movements">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Journal des Mouvements de Stock</h1>
+              <p>Historique d'audit des entrées, sorties et ajustements d'inventaire.</p>
+            </div>
+            <button class="btn-primary" onclick="openMovementModalForProduct()">
+              <i class="fa-solid fa-right-left"></i> Enregistrer un Mouvement
+            </button>
+          </div>
+
+          <div class="filter-bar">
+            <div class="filter-group">
+              <input type="text" id="search-movement" class="form-control" placeholder="Rechercher produit ou motif..." style="min-width: 240px;" oninput="renderMovements()">
+              <select id="filter-movement-type" class="form-control" onchange="renderMovements()">
+                <option value="ALL">Tous les types</option>
+                <option value="IN">Entrées uniquement</option>
+                <option value="OUT">Sorties uniquement</option>
+                <option value="ADJUST">Ajustements d'inventaire</option>
+              </select>
+            </div>
+            <button class="btn-secondary" onclick="exportMovementsCSV()">
+              <i class="fa-solid fa-file-csv"></i> Export CSV
+            </button>
+          </div>
+
+          <div class="card" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Date & Heure</th>
+                    <th>Produit / SKU</th>
+                    <th>Type</th>
+                    <th>Quantité</th>
+                    <th>Motif / Remarque</th>
+                    <th>Opérateur</th>
+                  </tr>
+                </thead>
+                <tbody id="movements-table-body">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 6: ALERTS & REORDER -->
+        <section class="view-section" id="view-alerts">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Gestion des Alertes & Out-of-Stock</h1>
+              <p id="alert-count-header">Chargement des alertes de stock...</p>
+            </div>
+            <button class="btn-primary" style="background: linear-gradient(135deg, var(--warning), #d97706);" onclick="generatePOFromLowStock()">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Bon de Commande Auto
+            </button>
+          </div>
+
+          <div class="card" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Produit & SKU</th>
+                    <th>Catégorie</th>
+                    <th>Stock Actuel</th>
+                    <th>Seuil Minimal</th>
+                    <th>Suggestion Commande</th>
+                    <th>Fournisseur Principal</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="alerts-table-body">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 7: CATEGORIES GRID -->
+        <section class="view-section" id="view-categories">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Gestion des Catégories</h1>
+              <p>Organisez vos produits par familles et attribuez des codes couleurs.</p>
+            </div>
+            <button class="btn-primary" onclick="openCategoryModal()">
+              <i class="fa-solid fa-folder-plus"></i> Nouvelle Catégorie
+            </button>
+          </div>
+
+          <div class="kpi-grid" id="categories-grid">
+            <!-- Populated by JS -->
+          </div>
+        </section>
+
+        <!-- VIEW 8: REPORTS & BACKUP -->
+        <section class="view-section" id="view-reports">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Rapports & Sauvegardes de Données</h1>
+              <p>Exportez vos rapports au format CSV ou réalisez une sauvegarde complète de votre base.</p>
+            </div>
+          </div>
+
+          <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+            
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title"><i class="fa-solid fa-file-csv" style="color: var(--success);"></i> Exportation CSV Produit</h3>
+              </div>
+              <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+                Téléchargez la liste complète de votre stock avec la valeur d'achat et les prix de vente.
+              </p>
+              <button class="btn-primary" style="width: 100%;" onclick="exportProductsCSV()">
+                <i class="fa-solid fa-download"></i> Exporter Produits (CSV)
+              </button>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title"><i class="fa-solid fa-clock-rotate-left" style="color: var(--accent-primary);"></i> Exportation Mouvements</h3>
+              </div>
+              <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+                Téléchargez l'historique d'audit complet de toutes les transactions au format CSV.
+              </p>
+              <button class="btn-primary" style="width: 100%;" onclick="exportMovementsCSV()">
+                <i class="fa-solid fa-download"></i> Exporter Mouvements (CSV)
+              </button>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title"><i class="fa-solid fa-database" style="color: var(--info);"></i> Sauvegarde & Restauration JSON</h3>
+              </div>
+              <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+                Exportez ou restaurez un fichier de sauvegarde intégrale (Produits, Factures, Commandes, Réglages).
+              </p>
+              <div style="display: flex; gap: 0.5rem; flex-direction: column;">
+                <button class="btn-secondary" style="width: 100%;" onclick="exportFullBackupJSON()">
+                  <i class="fa-solid fa-file-code"></i> Télécharger Sauvegarde JSON
+                </button>
+                <label class="btn-secondary" style="width: 100%; text-align: center; cursor: pointer;">
+                  <i class="fa-solid fa-upload"></i> Restaurer depuis JSON
+                  <input type="file" id="json-backup-input" accept=".json" style="display: none;" onchange="importBackupJSON(event)">
+                </label>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title"><i class="fa-solid fa-rotate-left" style="color: var(--warning);"></i> Réinitialiser Données Démo</h3>
+              </div>
+              <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+                Remettre l'application à zéro avec les données d'exemple d'origine (prix en FCFA).
+              </p>
+              <button class="btn-secondary" style="width: 100%; color: var(--warning); border-color: var(--warning);" onclick="resetDemoDataWithConfirm()">
+                <i class="fa-solid fa-trash-arrow-up"></i> Charger les Données Démo
+              </button>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- VIEW 9: SETTINGS & USER ROLES (PARAMÈTRES 2M GLOBAL SERVICES & RBAC) -->
+        <section class="view-section" id="view-settings">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Paramètres 2M GLOBAL SERVICES & Gestion des Rôles</h1>
+              <p>Consultez la liste des administrateurs & utilisateurs du système. L'Administrateur Général peut modifier les rôles et droits d'accès.</p>
+            </div>
+          </div>
+
+          <!-- Section 1: System Administrators & User Accounts List (RBAC) -->
+          <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+              <h3 class="card-title"><i class="fa-solid fa-user-shield" style="color: var(--accent-primary);"></i> Liste des Administrateurs & Utilisateurs du Système</h3>
+              <button class="btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick="openAddUserModal()">
+                <i class="fa-solid fa-user-plus"></i> + Nouvel Administrateur / Utilisateur
+              </button>
+            </div>
+            
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+              Seul l'<strong>Administrateur Général</strong> est autorisé à modifier les rôles et attribuer les droits d'accès aux factures.
+            </p>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Administrateur / Utilisateur & Email</th>
+                    <th>Rôle Attribué</th>
+                    <th>Permissions & Niveaux d'Accès</th>
+                    <th>Action Admin Général</th>
+                  </tr>
+                </thead>
+                <tbody id="users-table-body">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Section 2: Company Info & Commercial Options -->
+          <form id="settings-form" onsubmit="handleSettingsSubmit(event)">
+            <div class="kpi-grid" style="grid-template-columns: 2fr 1fr;">
+              
+              <!-- Left Column: Company & Stamp -->
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title"><i class="fa-solid fa-building" style="color: var(--accent-primary);"></i> Coordonnées & Identifiants Officiels de l'Entreprise</h3>
+                </div>
+
+                <div style="margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem; background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md);">
+                  <img src="assets/logo.png" alt="2M GLOBAL SERVICES" style="height: 60px; object-fit: contain; background: #fff; padding: 6px; border-radius: 8px;">
+                  <div>
+                    <h3 style="font-size: 1.1rem; color: #0284c7;">2M GLOBAL SERVICES</h3>
+                    <span style="font-size: 0.8rem; color: var(--text-secondary);">Logo officiel configuré pour tous les documents</span>
+                  </div>
+                </div>
+
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Nom de la Société *</label>
+                    <input type="text" id="set-company-name" class="form-control" value="2M GLOBAL SERVICES" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Téléphone commercial *</label>
+                    <input type="text" id="set-company-phone" class="form-control" value="76-192-34-41" required>
+                  </div>
+                </div>
+
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Email de contact *</label>
+                    <input type="email" id="set-company-email" class="form-control" value="2mglobalservices11@gmail.COM" required>
+                  </div>
+                  <div class="form-group">
+                    <label>N° N.I.N.E.A / RCCM Officiel *</label>
+                    <input type="text" id="set-company-taxid" class="form-control" value="N.I.N.E.A: 012457695 - SN.DKR.2025.A.35597 - 35529/2025/RCCM/RA" required>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>Adresse du siège social *</label>
+                  <input type="text" id="set-company-address" class="form-control" value="LIBERTE O1 VILLA N• 1336" required>
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                  <label style="color: var(--accent-primary);"><i class="fa-solid fa-stamp"></i> Insertion du Cachet Électronique Officiel</label>
+                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                    Importez le fichier image de votre tampon/cachet (PNG transparent recommandé). Il s'affichera automatiquement sur vos factures.
+                  </p>
+                  <input type="file" id="stamp-file-input" class="form-control" accept="image/*" onchange="handleStampFileUpload(event)">
+                  <div id="stamp-preview" style="margin-top: 0.75rem;"></div>
+                </div>
+              </div>
+
+              <!-- Right Column: Commercial & Document Policies -->
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title"><i class="fa-solid fa-sliders" style="color: var(--warning);"></i> Options Commerciales & Documentaires</h3>
+                </div>
+
+                <div class="form-group">
+                  <label>Symbole de Devise</label>
+                  <input type="text" id="set-currency" class="form-control" value="FCFA" required>
+                </div>
+
+                <div class="form-group">
+                  <label>Taux de TVA par défaut (%)</label>
+                  <input type="number" id="set-vat-rate" class="form-control" value="18" min="0" max="100">
+                </div>
+
+                <div class="form-group">
+                  <label>Préfixe Facture Définitive</label>
+                  <input type="text" id="set-inv-prefix" class="form-control" value="FAC-">
+                </div>
+
+                <div class="form-group">
+                  <label>Préfixe Facture Proforma</label>
+                  <input type="text" id="set-pro-prefix" class="form-control" value="PRO-">
+                </div>
+
+                <div class="form-group">
+                  <label>Préfixe Bon de Commande</label>
+                  <input type="text" id="set-po-prefix" class="form-control" value="BC-">
+                </div>
+
+                <div class="form-group" style="margin-top: 0.5rem;">
+                  <label><i class="fa-solid fa-qrcode"></i> Afficher QR Code d'Authenticité</label>
+                  <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; text-transform: none; font-size: 0.88rem; color: var(--text-primary);">
+                    <input type="checkbox" id="set-show-qrcode" checked style="width: 18px; height: 18px;">
+                    Imprimer le QR Code sur les factures
+                  </label>
+                </div>
+
+                <div class="form-group" style="margin-top: 0.5rem;">
+                  <label><i class="fa-solid fa-ban-smoking"></i> Politique de Stock Négatif</label>
+                  <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; text-transform: none; font-size: 0.88rem; color: var(--text-primary);">
+                    <input type="checkbox" id="set-allow-negative" style="width: 18px; height: 18px;">
+                    Autoriser les ventes si stock épuisé
+                  </label>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">
+                  <i class="fa-solid fa-floppy-disk"></i> Enregistrer les Paramètres
+                </button>
+              </div>
+
+            </div>
+          </form>
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- MODALS CONTAINER -->
+
+  <!-- Modal 1: Product Add / Edit -->
+  <div class="modal-backdrop" id="modal-product">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="product-modal-title">Nouveau Produit</h3>
+        <button class="icon-btn" onclick="closeModal('modal-product')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="product-form" onsubmit="handleProductFormSubmit(event)">
+        <div class="modal-body">
+          <input type="hidden" id="product-id">
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>SKU / Référence *</label>
+              <input type="text" id="product-sku" class="form-control" placeholder="EX: LAP-DELL-15" required oninput="generateBarcodePreview(this.value)">
+            </div>
+            <div class="form-group">
+              <label>Nom du Produit *</label>
+              <input type="text" id="product-name" class="form-control" placeholder="Nom de la référence" required>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Catégorie *</label>
+              <select id="product-category" class="form-control" required></select>
+            </div>
+            <div class="form-group">
+              <label>Emplacement en Stock</label>
+              <input type="text" id="product-location" class="form-control" placeholder="Ex: Allée A - Étagère 3">
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Quantité Initiale *</label>
+              <input type="number" id="product-qty" class="form-control" min="0" value="0" required>
+            </div>
+            <div class="form-group">
+              <label>Seuil d'Alerte Min. *</label>
+              <input type="number" id="product-min" class="form-control" min="0" value="5" required>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Prix d'Achat HT (FCFA)</label>
+              <input type="number" step="1" id="product-buy-price" class="form-control" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label>Prix de Vente TTC (FCFA)</label>
+              <input type="number" step="1" id="product-sell-price" class="form-control" placeholder="0">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 0.5rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+            <label><i class="fa-solid fa-camera"></i> Photo du Produit (Optionnel)</label>
+            <input type="file" id="product-image-file" class="form-control" accept="image/*" onchange="handleProductImageUpload(event)">
+            <input type="hidden" id="product-image-data">
+            <div id="product-image-preview" style="margin-top: 0.5rem;"></div>
+          </div>
+
+          <div class="form-group">
+            <label>Remarques / Descriptif</label>
+            <textarea id="product-notes" class="form-control" rows="2" placeholder="Spécifications techniques, garanties..."></textarea>
+          </div>
+
+          <div class="form-group" style="align-items: center;">
+            <label>Aperçu Code-Barres Visuel</label>
+            <div id="barcode-preview"></div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-product')">Annuler</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Enregistrer Produit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Stock Movement -->
+  <div class="modal-backdrop" id="modal-movement">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>Enregistrer un Mouvement</h3>
+        <button class="icon-btn" onclick="closeModal('modal-movement')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="movement-form" onsubmit="handleMovementFormSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Sélectionner le Produit *</label>
+            <select id="movement-product-select" class="form-control" required></select>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Type d'opération *</label>
+              <select id="movement-type" class="form-control" required>
+                <option value="IN">Entrée (+ Stock)</option>
+                <option value="OUT">Sortie (- Stock)</option>
+                <option value="ADJUST">Ajustement d'inventaire (=)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Quantité *</label>
+              <input type="number" id="movement-qty" class="form-control" min="1" value="1" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Motif / Justificatif</label>
+            <input type="text" id="movement-reason" class="form-control" placeholder="Ex: Réception commande #1234, Vente client...">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-movement')">Annuler</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Valider Mouvement</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 3: Quick Restock -->
+  <div class="modal-backdrop" id="modal-restock">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 id="restock-modal-title">Réapprovisionner</h3>
+        <button class="icon-btn" onclick="closeModal('modal-restock')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="restock-form" onsubmit="handleRestockSubmit(event)">
+        <div class="modal-body">
+          <input type="hidden" id="restock-product-id">
+          <p id="restock-product-name" style="font-weight: 600; color: var(--accent-primary); margin-bottom: 1rem;"></p>
+
+          <div class="form-group">
+            <label>Quantité à ajouter au stock *</label>
+            <input type="number" id="restock-qty" class="form-control" min="1" value="10" required>
+          </div>
+
+          <div class="form-group">
+            <label>N° de commande ou motif</label>
+            <input type="text" id="restock-reason" class="form-control" value="Réapprovisionnement Rapide">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-restock')">Annuler</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-truck-ramp-box"></i> Confirmer la Réception</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 4: Category Add/Edit -->
+  <div class="modal-backdrop" id="modal-category">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3>Catégorie de Produits</h3>
+        <button class="icon-btn" onclick="closeModal('modal-category')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="category-form" onsubmit="handleCategoryFormSubmit(event)">
+        <div class="modal-body">
+          <input type="hidden" id="cat-id">
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Nom de la Catégorie *</label>
+              <input type="text" id="cat-name" class="form-control" placeholder="Ex: Électronique, Consommables..." required>
+            </div>
+            <div class="form-group">
+              <label>Couleur du Badge</label>
+              <input type="color" id="cat-color" class="form-control" style="height: 42px; padding: 2px;" value="#6366f1">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="cat-desc" class="form-control" rows="3" placeholder="Informations complémentaires..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-category')">Annuler</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 5: Create or Edit Invoice -->
+  <div class="modal-backdrop" id="modal-invoice-create">
+    <div class="modal-card" style="max-width: 820px;">
+      <div class="modal-header">
+        <h3 id="invoice-modal-title">Nouvelle Facture (Proforma / Définitive)</h3>
+        <button class="icon-btn" onclick="closeModal('modal-invoice-create')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="invoice-form" onsubmit="handleInvoiceSubmit(event)">
+        <div class="modal-body">
+
+          <!-- Hidden Editing Invoice ID -->
+          <input type="hidden" id="editing-invoice-id">
+
+          <!-- Type Selector -->
+          <div class="form-group" style="background: var(--bg-tertiary); padding: 0.85rem 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; border-left: 4px solid var(--accent-primary);">
+            <label style="color: var(--accent-primary);"><i class="fa-solid fa-file-signature"></i> Type de Document à Générer *</label>
+            <select id="inv-type-select" class="form-control" onchange="onInvoiceTypeChange(this.value)" required style="font-weight: 700; font-size: 0.95rem; margin-top: 0.2rem;">
+              <option value="DEFINITIVE">Facture Définitive (Commerciale - Déduit le stock automatiquement)</option>
+              <option value="PROFORMA">Facture Proforma (Devis / Offre de prix - Sans déduction de stock)</option>
+            </select>
+            <div id="inv-type-helptext" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.4rem;"></div>
+          </div>
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Nom ou Raison Sociale du Client *</label>
+              <input type="text" id="inv-client-name" class="form-control" placeholder="Ex: Société SOTRA CI ou Client Passage" required>
+            </div>
+            <div class="form-group">
+              <label>Téléphone Client</label>
+              <input type="text" id="inv-client-phone" class="form-control" placeholder="+225 01 02 03 04">
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>N° RCCM / Registre du Client (Optionnel)</label>
+              <input type="text" id="inv-client-taxid" class="form-control" placeholder="Ex: RCCM: CI-ABJ-2024-B-98765">
+            </div>
+            <div class="form-group" id="inv-payment-group">
+              <label>Mode de Règlement *</label>
+              <select id="inv-payment-method" class="form-control" onchange="onPaymentMethodChange(this.value)" style="font-weight: 600;">
+                <option value="Espèces">Espèces</option>
+                <option value="Wave">Wave</option>
+                <option value="Orange Money">Orange Money</option>
+                <option value="Chèque">Chèque</option>
+                <option value="Virement bancaire">Virement bancaire</option>
+                <option value="Autre">Autre (à préciser)</option>
+              </select>
+              <input type="text" id="inv-payment-other" class="form-control" placeholder="Précisez le mode de règlement..." style="display: none; margin-top: 0.4rem;">
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group" id="inv-due-date-group">
+              <label>Date d'échéance / Validité</label>
+              <input type="date" id="inv-due-date" class="form-control">
+            </div>
+            <div class="form-group" id="inv-status-group">
+              <label>Statut initial</label>
+              <select id="inv-status-select" class="form-control">
+                <option value="PAID">Payée / Validée</option>
+                <option value="PENDING">En attente de règlement</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top: 1rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="font-size: 0.95rem; color: var(--text-primary);">Désignation des Articles & Prestations</h4>
+            <button type="button" class="btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick="addInvoiceItemRow()">
+              <i class="fa-solid fa-plus"></i> Ajouter une ligne
+            </button>
+          </div>
+
+          <div id="invoice-items-rows">
+            <!-- Dynamic rows -->
+          </div>
+
+          <!-- Total Calculation & Price Customization Box -->
+          <div style="margin-top: 1.25rem; background: var(--bg-card); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <h4 style="font-size: 0.9rem; color: var(--accent-primary); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+              <i class="fa-solid fa-calculator"></i> Ajustement & Personnalisation des Prix
+            </h4>
+
+            <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+              <div class="form-group">
+                <label style="font-size: 0.75rem;">Remise Globale (FCFA)</label>
+                <input type="number" id="inv-discount" class="form-control" value="0" min="0" step="1" placeholder="0" oninput="calculateInvoiceTotals('DISCOUNT')">
+              </div>
+              <div class="form-group">
+                <label style="font-size: 0.75rem;">Taux TVA (%)</label>
+                <input type="number" id="inv-vat-rate" class="form-control" value="18" min="0" max="100" oninput="calculateInvoiceTotals('VAT')">
+              </div>
+              <div class="form-group">
+                <label style="font-size: 0.75rem; color: var(--success); font-weight: 700;">Prix Total TTC Personnalisé (FCFA) *</label>
+                <input type="number" id="inv-custom-total" class="form-control" min="0" step="1" placeholder="Modifier le total direct" style="border-color: var(--success); font-weight: 700;" oninput="calculateInvoiceTotals('CUSTOM')">
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem; font-size: 0.88rem;">
+              <div style="text-align: right;">
+                <div>Sous-total HT : <strong id="inv-summary-subtotal">0 FCFA</strong></div>
+                <div>Remise : <strong id="inv-summary-discount" style="color: var(--warning);">0 FCFA</strong></div>
+                <div>Net HT : <strong id="inv-summary-net">0 FCFA</strong></div>
+                <div>TVA : <strong id="inv-summary-vat">0 FCFA</strong></div>
+                <div style="font-size: 1.15rem; color: var(--accent-primary); margin-top: 0.25rem; border-top: 1px solid var(--border-color); padding-top: 0.25rem;">
+                  TOTAL TTC : <strong id="inv-summary-total">0 FCFA</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 1rem;">
+            <label>Conditions de vente & Remarques (Optionnel)</label>
+            <input type="text" id="inv-notes" class="form-control" placeholder="Ex: Offre de prix valable 30 jours, Garantie 12 mois...">
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-invoice-create')">Annuler</button>
+          <button type="submit" class="btn-success" id="inv-submit-btn"><i class="fa-solid fa-check-double"></i> Générer le Document</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 6: Invoice Detail & Print View -->
+  <div class="modal-backdrop" id="modal-invoice-detail">
+    <div class="modal-card" style="max-width: 850px;">
+      <div class="modal-header">
+        <h3>Aperçu de la Facture</h3>
+        <button class="icon-btn" onclick="closeModal('modal-invoice-detail')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="printable-invoice-content">
+        <!-- Printable layout -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('modal-invoice-detail')">Fermer</button>
+        <button type="button" class="btn-primary" onclick="printInvoice()"><i class="fa-solid fa-print"></i> Imprimer Document</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 7: Create Purchase Order -->
+  <div class="modal-backdrop" id="modal-po-create">
+    <div class="modal-card" style="max-width: 780px;">
+      <div class="modal-header">
+        <h3>Nouveau Bon de Commande Fournisseur</h3>
+        <button class="icon-btn" onclick="closeModal('modal-po-create')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="po-form" onsubmit="handlePOSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Fournisseur Destinataire *</label>
+            <select id="po-supplier-select" class="form-control" required></select>
+          </div>
+
+          <div style="margin-top: 1rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="font-size: 0.95rem; color: var(--text-primary);">Articles à commander</h4>
+            <button type="button" class="btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick="addPOItemRow()">
+              <i class="fa-solid fa-plus"></i> Ajouter une ligne
+            </button>
+          </div>
+
+          <div id="po-items-rows">
+            <!-- Dynamic PO rows -->
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+            <div style="display: flex; gap: 1rem; align-items: center; font-size: 1.1rem; color: var(--text-primary);">
+              <span>Total Commande Estimé :</span>
+              <strong id="po-summary-total" style="color: var(--accent-primary);">0 FCFA</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-po-create')">Annuler</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-paper-plane"></i> Générer le Bon de Commande</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 8: Purchase Order Detail View -->
+  <div class="modal-backdrop" id="modal-po-detail">
+    <div class="modal-card" style="max-width: 800px;">
+      <div class="modal-header">
+        <h3>Aperçu du Bon de Commande</h3>
+        <button class="icon-btn" onclick="closeModal('modal-po-detail')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="printable-po-content">
+        <!-- Printable PO layout -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('modal-po-detail')">Fermer</button>
+        <button type="button" class="btn-primary" onclick="printInvoice()"><i class="fa-solid fa-print"></i> Imprimer Bon de Commande</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 9: Product Detail View -->
+  <div class="modal-backdrop" id="modal-product-detail">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Fiche Détaillée du Produit</h3>
+        <button class="icon-btn" onclick="closeModal('modal-product-detail')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="product-detail-content">
+        <!-- Dynamic content -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('modal-product-detail')">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 10: Executive Dashboard Financial Report -->
+  <div class="modal-backdrop" id="modal-dashboard-report">
+    <div class="modal-card" style="max-width: 850px;">
+      <div class="modal-header">
+        <h3>Rapport Financier & Bilan d'Exploitation</h3>
+        <button class="icon-btn" onclick="closeModal('modal-dashboard-report')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="printable-dashboard-report">
+        <!-- Printable report -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('modal-dashboard-report')">Fermer</button>
+        <button type="button" class="btn-primary" onclick="printDashboardReport()"><i class="fa-solid fa-print"></i> Imprimer Bilan A4</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 11: Edit User Account & Role Permission Modal (Admin Only) -->
+  <div class="modal-backdrop" id="modal-user-edit">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 id="user-edit-modal-title">Modification de Rôle & Compte Utilisateur</h3>
+        <button class="icon-btn" onclick="closeModal('modal-user-edit')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="user-edit-form" onsubmit="handleUserFormSubmit(event)">
+        <div class="modal-body">
+          <input type="hidden" id="user-edit-id">
+
+          <div class="form-group">
+            <label>Nom complet de l'Administrateur / Utilisateur *</label>
+            <input type="text" id="user-edit-name" class="form-control" placeholder="Ex: Adama Coulibaly" required>
+          </div>
+
+          <div class="form-group">
+            <label>Adresse E-mail de connexion *</label>
+            <input type="email" id="user-edit-email" class="form-control" placeholder="agent@2mglobalservices.ci" required>
+          </div>
+
+          <div class="form-group" style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); border-left: 4px solid var(--accent-primary);">
+            <label style="color: var(--accent-primary); font-weight: 700;"><i class="fa-solid fa-crown"></i> Attribution du Rôle & Niveau d'Accès *</label>
+            <select id="user-edit-role" class="form-control" style="font-weight: 700; margin-top: 0.35rem;" required>
+              <option value="ADMIN">👑 Administrateur Général (Accès Total & Édition Factures)</option>
+              <option value="MAGASINIER">📦 Magasinier / Stock (Entrées/Sorties & Réceptions BC)</option>
+              <option value="VENDEUR">💼 Vendeur / Commercial (Factures Proforma & Ventes)</option>
+            </select>
+            <p style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.5rem; line-height: 1.3;">
+              <i class="fa-solid fa-info-circle"></i> <strong>Note de Sécurité :</strong> Seul un compte configuré avec le rôle <strong>Administrateur Général</strong> aura le droit d'éditer ou modifier des factures proforma & définitives.
+            </p>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-user-edit')">Annuler</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Enregistrer le Rôle</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JS Scripts -->
+  <script src="js/store.js"></script>
+  <script src="js/components/dashboard.js"></script>
+  <script src="js/components/products.js"></script>
+  <script src="js/components/invoices.js"></script>
+  <script src="js/components/purchase_orders.js"></script>
+  <script src="js/components/movements.js"></script>
+  <script src="js/components/alerts.js"></script>
+  <script src="js/components/categories.js"></script>
+  <script src="js/components/reports.js"></script>
+  <script src="js/components/settings.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
