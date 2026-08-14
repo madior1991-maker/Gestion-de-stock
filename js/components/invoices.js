@@ -1,21 +1,45 @@
 /**
- * StockManager Pro v2 - Invoices Component (Single-Page A4 Invoice Layout, Proforma vs Definitive Editing & Official Company Footer)
+ * StockManager Pro v2 - Invoices Component (Single-Page A4 Invoice Layout, Proforma, Definitive & Service Provider Invoices)
  */
 
 let invoiceItemsCount = 0;
+let currentInvoiceFilter = 'ALL';
+
+function filterInvoiceList(typeFilter) {
+  currentInvoiceFilter = typeFilter;
+
+  const buttons = document.querySelectorAll('.inv-filter-btn');
+  buttons.forEach(btn => {
+    if (btn.dataset.filter === typeFilter) {
+      btn.classList.add('active');
+      btn.style.background = 'var(--accent-primary)';
+      btn.style.color = '#ffffff';
+    } else {
+      btn.classList.remove('active');
+      btn.style.background = 'var(--bg-tertiary)';
+      btn.style.color = 'var(--text-secondary)';
+    }
+  });
+
+  renderInvoices();
+}
 
 function renderInvoices() {
-  const invoices = window.store.getInvoices();
+  let invoices = window.store.getInvoices();
   const isAdmin = window.store.isAdmin();
   const tbody = document.getElementById('invoices-table-body');
   if (!tbody) return;
+
+  if (currentInvoiceFilter !== 'ALL') {
+    invoices = invoices.filter(inv => inv.type === currentInvoiceFilter);
+  }
 
   if (invoices.length === 0) {
     tbody.innerHTML = `
       <tr>
         <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
           <i class="fa-solid fa-receipt" style="font-size: 2.5rem; margin-bottom: 0.5rem; display: block; opacity: 0.5;"></i>
-          Aucune facture enregistrée pour le moment.
+          Aucune facture ne correspond au filtre sélectionné.
         </td>
       </tr>
     `;
@@ -28,11 +52,18 @@ function renderInvoices() {
     });
 
     const isProforma = inv.type === 'PROFORMA';
-    const typeBadge = isProforma ?
-      '<span class="badge badge-info" style="border: 1px solid var(--info);"><i class="fa-solid fa-file-lines"></i> PROFORMA</span>' :
-      '<span class="badge badge-success" style="border: 1px solid var(--success);"><i class="fa-solid fa-file-invoice"></i> DÉFINITIVE</span>';
+    const isService = inv.type === 'SERVICE';
 
-    // Status Badge: Proforma has no payment status!
+    let typeBadge = '';
+    if (isProforma) {
+      typeBadge = '<span class="badge badge-info" style="border: 1px solid var(--info);"><i class="fa-solid fa-file-lines"></i> PROFORMA</span>';
+    } else if (isService) {
+      typeBadge = '<span class="badge badge-primary" style="background: linear-gradient(135deg, #0284c7, #0369a1); color:#fff;"><i class="fa-solid fa-briefcase"></i> PRESTATION</span>';
+    } else {
+      typeBadge = '<span class="badge badge-success" style="border: 1px solid var(--success);"><i class="fa-solid fa-file-invoice"></i> DÉFINITIVE</span>';
+    }
+
+    // Status Badge
     let statusBadge = '';
     if (isProforma) {
       if (inv.status === 'CONVERTED') {
@@ -47,22 +78,14 @@ function renderInvoices() {
       else statusBadge = '<span class="badge badge-success"><span class="badge-dot"></span>Payée</span>';
     }
 
-    // Editing ALL invoices (Proforma & Definitive) is STRICTLY reserved for Admin Général
+    // Admin Editing Check
     let editBtnHtml = '';
     if (isAdmin) {
-      if (isProforma && inv.status !== 'CONVERTED') {
-        editBtnHtml = `
-          <button class="btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.78rem; border-color: var(--info); color: var(--info);" onclick="openEditInvoiceModal('${inv.id}')" title="Modifier le devis proforma (Réservé Admin Général)">
-            <i class="fa-solid fa-pen-to-square"></i> Éditer
-          </button>
-        `;
-      } else if (!isProforma) {
-        editBtnHtml = `
-          <button class="btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.78rem; border-color: var(--warning); color: var(--warning);" onclick="openEditInvoiceModal('${inv.id}')" title="Modifier cette facture (Réservé Admin Général)">
-            <i class="fa-solid fa-pen-to-square"></i> Éditer
-          </button>
-        `;
-      }
+      editBtnHtml = `
+        <button class="btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.78rem; border-color: var(--info); color: var(--info);" onclick="openEditInvoiceModal('${inv.id}')" title="Modifier ce document (Réservé Admin Général)">
+          <i class="fa-solid fa-pen-to-square"></i> Éditer
+        </button>
+      `;
     } else {
       editBtnHtml = `
         <span style="font-size: 0.72rem; color: var(--text-muted); opacity: 0.5; align-self: center;" title="Modification verrouillée : Réservée à l'Administrateur Général">
@@ -93,7 +116,7 @@ function renderInvoices() {
         <td>
           <div style="display: flex; gap: 0.35rem; align-items: center;">
             ${isProforma && inv.status !== 'CONVERTED' ? `
-              <button class="btn-primary" style="padding: 0.3rem 0.6rem; font-size: 0.78rem; background: linear-gradient(135deg, #10b981, #059669);" onclick="convertProformaToDefinitiveWithConfirm('${inv.id}')" title="Convertir en facture définitive & déduire le stock">
+              <button class="btn-primary" style="padding: 0.3rem 0.6rem; font-size: 0.78rem; background: linear-gradient(135deg, #10b981, #059669);" onclick="convertProformaToDefinitiveWithConfirm('${inv.id}')" title="Convertir en facture définitive">
                 <i class="fa-solid fa-arrow-right-arrow-left"></i> Convertir
               </button>
             ` : ''}
@@ -117,7 +140,14 @@ function openNewInvoiceModal(defaultType = 'DEFINITIVE') {
   invoiceItemsCount = 0;
 
   document.getElementById('editing-invoice-id').value = '';
-  document.getElementById('invoice-modal-title').textContent = 'Nouvelle Facture (Proforma / Définitive)';
+
+  const modalTitleMap = {
+    'DEFINITIVE': 'Nouvelle Facture Définitive (Vente d\'Articles)',
+    'PROFORMA': 'Nouvelle Facture Proforma (Devis Commercial)',
+    'SERVICE': 'Nouvelle Facture de Prestation de Services (Honoraires & Travaux)'
+  };
+
+  document.getElementById('invoice-modal-title').textContent = modalTitleMap[defaultType] || 'Nouvelle Facture';
   document.getElementById('inv-submit-btn').innerHTML = `<i class="fa-solid fa-check-double"></i> Générer le Document`;
 
   const typeSelect = document.getElementById('inv-type-select');
@@ -165,16 +195,13 @@ function onPaymentMethodChange(val) {
 }
 
 function openEditInvoiceModal(invoiceId) {
-  // Strict RBAC Enforcement: BOTH Proforma & Definitive invoice edits are restricted to Admin Général ONLY
   if (!window.store.isAdmin()) {
-    showToast('ACCÈS REFUSÉ : Seul l\'Administrateur Général est autorisé à modifier une facture (Proforma ou Définitive).', 'danger');
+    showToast('ACCÈS REFUSÉ : Seul l\'Administrateur Général est autorisé à modifier une facture.', 'danger');
     return;
   }
 
   const inv = window.store.getInvoiceById(invoiceId);
   if (!inv) return;
-
-  const isProforma = inv.type === 'PROFORMA';
 
   const form = document.getElementById('invoice-form');
   if (form) form.reset();
@@ -185,15 +212,14 @@ function openEditInvoiceModal(invoiceId) {
 
   document.getElementById('editing-invoice-id').value = inv.id;
 
-  const modalTitle = isProforma ?
-    `Éditer la Facture Proforma #${inv.number} (Mode Admin Général)` :
-    `Éditer Facture Validée #${inv.number} (Mode Admin Général)`;
+  const modalTitle = `Éditer la Facture #${inv.number} (Mode Admin Général)`;
 
   document.getElementById('invoice-modal-title').textContent = modalTitle;
   document.getElementById('inv-submit-btn').innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Enregistrer les Modifications (Admin)`;
 
-  document.getElementById('inv-type-select').value = inv.type || 'DEFINITIVE';
-  onInvoiceTypeChange(inv.type || 'DEFINITIVE');
+  const type = inv.type || 'DEFINITIVE';
+  document.getElementById('inv-type-select').value = type;
+  onInvoiceTypeChange(type);
 
   document.getElementById('inv-client-name').value = inv.clientName || '';
   document.getElementById('inv-client-phone').value = inv.clientPhone || '';
@@ -224,7 +250,7 @@ function openEditInvoiceModal(invoiceId) {
 
   if (inv.items && inv.items.length > 0) {
     inv.items.forEach(item => {
-      addInvoiceItemRow(item.productId, item.quantity, item.unitPrice);
+      addInvoiceItemRow(item.productId || '', item.quantity, item.unitPrice, item.productName || '');
     });
   } else {
     addInvoiceItemRow();
@@ -235,22 +261,25 @@ function openEditInvoiceModal(invoiceId) {
 
 function onInvoiceTypeChange(type) {
   const isProforma = type === 'PROFORMA';
+  const isService = type === 'SERVICE';
+
   const helpText = document.getElementById('inv-type-helptext');
   const paymentGroup = document.getElementById('inv-payment-group');
   const dueDateGroup = document.getElementById('inv-due-date-group');
   const statusGroup = document.getElementById('inv-status-group');
 
   if (helpText) {
+    helpText.style.display = 'block';
     if (isProforma) {
-      helpText.style.display = 'block';
-      helpText.innerHTML = `<i class="fa-solid fa-circle-info"></i> <strong>Proforma (Devis) :</strong> Offre de prix sans engagement. Pas de mode de règlement, d'échéance ni de statut de paiement.`;
+      helpText.innerHTML = `<i class="fa-solid fa-circle-info"></i> <strong>Proforma (Devis) :</strong> Offre de prix sans engagement commercial. Pas d'échéance ni de statut de règlement.`;
+    } else if (isService) {
+      helpText.innerHTML = `<i class="fa-solid fa-briefcase"></i> <strong>Prestation de Services :</strong> Saisie libre des travaux, honoraires et prestations réalisés sans déduction de stock physique.`;
     } else {
-      helpText.style.display = 'block';
-      helpText.innerHTML = `<i class="fa-solid fa-check-circle"></i> <strong>Facture Définitive :</strong> Vente commerciale réelle. Sélection du règlement & stock déduit automatiquement.`;
+      helpText.innerHTML = `<i class="fa-solid fa-check-circle"></i> <strong>Facture Définitive :</strong> Vente commerciale réelle avec sélection du règlement & déduction automatique de stock.`;
     }
   }
 
-  // Hide Payment Method, Due Date & Payment Status for Proforma invoices
+  // Payment Method, Due Date & Payment Status Visibility
   if (paymentGroup) {
     paymentGroup.style.display = isProforma ? 'none' : 'block';
     const paymentSelect = document.getElementById('inv-payment-method');
@@ -264,12 +293,38 @@ function onInvoiceTypeChange(type) {
   if (statusGroup) {
     statusGroup.style.display = isProforma ? 'none' : 'block';
   }
+
+  // Re-render items rows if switching type
+  const container = document.getElementById('invoice-items-rows');
+  if (container && container.children.length > 0) {
+    const existingRows = Array.from(container.children);
+    const savedItems = existingRows.map(r => {
+      const prodSelect = r.querySelector('.inv-prod-select');
+      const serviceInput = r.querySelector('.inv-service-name');
+      const qtyInput = r.querySelector('.inv-qty-input');
+      const priceInput = r.querySelector('.inv-price-input');
+      return {
+        productId: prodSelect ? prodSelect.value : '',
+        serviceName: serviceInput ? serviceInput.value : '',
+        quantity: parseInt(qtyInput?.value, 10) || 1,
+        price: parseFloat(priceInput?.value) || 0
+      };
+    });
+
+    container.innerHTML = '';
+    invoiceItemsCount = 0;
+    savedItems.forEach(item => {
+      addInvoiceItemRow(item.productId, item.quantity, item.price, item.serviceName);
+    });
+  }
 }
 
-function addInvoiceItemRow(prefillProductId = '', prefillQty = 1, prefillPrice = 0) {
+function addInvoiceItemRow(prefillProductId = '', prefillQty = 1, prefillPrice = 0, prefillServiceName = '') {
   const container = document.getElementById('invoice-items-rows');
   if (!container) return;
 
+  const currentType = document.getElementById('inv-type-select')?.value || 'DEFINITIVE';
+  const isService = currentType === 'SERVICE';
   const products = window.store.getProducts();
 
   invoiceItemsCount++;
@@ -278,26 +333,39 @@ function addInvoiceItemRow(prefillProductId = '', prefillQty = 1, prefillPrice =
   const row = document.createElement('div');
   row.className = 'form-grid';
   row.id = rowId;
-  row.style.gridTemplateColumns = '2fr 1fr 1fr 1fr 40px';
+  row.style.gridTemplateColumns = '2.2fr 0.8fr 1fr 1fr 40px';
   row.style.alignItems = 'end';
   row.style.marginBottom = '0.5rem';
 
-  const productOptions = `<option value="">Sélectionner un produit...</option>` +
-    products.map(p => `<option value="${p.id}" ${p.id === prefillProductId ? 'selected' : ''} data-price="${p.sellPrice}" data-stock="${p.quantity}">${escapeHtml(p.name)} (Disp: ${p.quantity}) - ${window.formatFCFA(p.sellPrice)}</option>`).join('');
-
-  row.innerHTML = `
-    <div class="form-group" style="margin-bottom: 0;">
-      <label style="font-size: 0.72rem;">Produit / Prestation</label>
+  let itemSelectorHtml = '';
+  if (isService) {
+    // Freeform text input for Service Invoices ("renseigner moi-même")
+    itemSelectorHtml = `
+      <input type="text" class="form-control inv-service-name" placeholder="Ex: Audit réseau, Maintenance, Honoraires..." value="${escapeHtml(prefillServiceName)}" required oninput="calculateInvoiceTotals()">
+    `;
+  } else {
+    // Product selector for Stock Invoices
+    const productOptions = `<option value="">Sélectionner un produit...</option>` +
+      products.map(p => `<option value="${p.id}" ${p.id === prefillProductId ? 'selected' : ''} data-price="${p.sellPrice}" data-stock="${p.quantity}">${escapeHtml(p.name)} (Disp: ${p.quantity}) - ${window.formatFCFA(p.sellPrice)}</option>`).join('');
+    
+    itemSelectorHtml = `
       <select class="form-control inv-prod-select" onchange="onInvoiceProductChange(this, '${rowId}')" required>
         ${productOptions}
       </select>
+    `;
+  }
+
+  row.innerHTML = `
+    <div class="form-group" style="margin-bottom: 0;">
+      <label style="font-size: 0.72rem;">${isService ? 'Désignation de la Prestation / Service *' : 'Produit / Article en Stock *'}</label>
+      ${itemSelectorHtml}
     </div>
     <div class="form-group" style="margin-bottom: 0;">
-      <label style="font-size: 0.72rem;">Qté</label>
+      <label style="font-size: 0.72rem;">Qté / Unit</label>
       <input type="number" class="form-control inv-qty-input" min="1" value="${prefillQty}" oninput="calculateInvoiceTotals()" required>
     </div>
     <div class="form-group" style="margin-bottom: 0;">
-      <label style="font-size: 0.72rem;">Prix Unitaire HT (FCFA)</label>
+      <label style="font-size: 0.72rem;">Tarif Unitaire HT (FCFA)</label>
       <input type="number" class="form-control inv-price-input" min="0" step="1" value="${prefillPrice || 0}" oninput="calculateInvoiceTotals()" required>
     </div>
     <div class="form-group" style="margin-bottom: 0;">
@@ -390,7 +458,6 @@ function handleInvoiceSubmit(e) {
 
   const editingId = document.getElementById('editing-invoice-id').value;
 
-  // Strict check on submit for modifications: Admin only!
   if (editingId && !window.store.isAdmin()) {
     showToast('ACCÈS REFUSÉ : Seul l\'Administrateur Général peut modifier une facture.', 'danger');
     return;
@@ -398,6 +465,7 @@ function handleInvoiceSubmit(e) {
 
   const type = document.getElementById('inv-type-select').value;
   const isProforma = type === 'PROFORMA';
+  const isService = type === 'SERVICE';
   const clientName = document.getElementById('inv-client-name').value.trim();
   const clientPhone = document.getElementById('inv-client-phone').value.trim();
   const clientTaxId = document.getElementById('inv-client-taxid').value.trim();
@@ -424,14 +492,23 @@ function handleInvoiceSubmit(e) {
   let subtotal = 0;
 
   rows.forEach(r => {
-    const select = r.querySelector('.inv-prod-select');
-    const productId = select.value;
-    const selectedOpt = select.options[select.selectedIndex];
-    const productName = selectedOpt ? selectedOpt.text.split(' (Disp:')[0] : '';
+    let productId = '';
+    let productName = '';
+
+    if (isService) {
+      const serviceInput = r.querySelector('.inv-service-name');
+      productName = serviceInput ? serviceInput.value.trim() : 'Prestation de Service';
+    } else {
+      const select = r.querySelector('.inv-prod-select');
+      productId = select ? select.value : '';
+      const selectedOpt = select ? select.options[select.selectedIndex] : null;
+      productName = selectedOpt ? selectedOpt.text.split(' (Disp:')[0] : '';
+    }
+
     const qty = parseInt(r.querySelector('.inv-qty-input').value, 10) || 0;
     const unitPrice = parseFloat(r.querySelector('.inv-price-input').value) || 0;
 
-    if (productId && qty > 0) {
+    if (productName && qty > 0) {
       const lineTotal = qty * unitPrice;
       subtotal += lineTotal;
       items.push({
@@ -445,7 +522,7 @@ function handleInvoiceSubmit(e) {
   });
 
   if (items.length === 0) {
-    showToast('Veuillez ajouter au moins un produit à la facture.', 'warning');
+    showToast('Veuillez ajouter au moins une prestation ou un produit à la facture.', 'warning');
     return;
   }
 
@@ -475,8 +552,7 @@ function handleInvoiceSubmit(e) {
         notes,
         status
       });
-      const typeLabel = isProforma ? 'Facture Proforma' : 'Facture Définitive';
-      showToast(`${typeLabel} #${invoice.number} modifiée par l'Administrateur Général !`, 'success');
+      showToast(`Facture #${invoice.number} modifiée par l'Administrateur Général !`, 'success');
     } else {
       invoice = window.store.createInvoice({
         type,
@@ -495,8 +571,12 @@ function handleInvoiceSubmit(e) {
         notes,
         status
       });
-      const typeLabel = isProforma ? 'Facture Proforma' : 'Facture Définitive';
-      showToast(`${typeLabel} #${invoice.number} générée avec succès !`, 'success');
+      const typeLabels = {
+        'DEFINITIVE': 'Facture Définitive',
+        'PROFORMA': 'Facture Proforma',
+        'SERVICE': 'Facture de Prestation de Services'
+      };
+      showToast(`${typeLabels[type]} #${invoice.number} générée avec succès !`, 'success');
     }
 
     closeModal('modal-invoice-create');
@@ -516,10 +596,10 @@ function convertProformaToDefinitiveWithConfirm(id) {
   const proforma = window.store.getInvoiceById(id);
   if (!proforma) return;
 
-  if (confirm(`Confirmer la conversion de la Proforma #${proforma.number} en Facture Définitive ? Le stock sera déduit automatiquement.`)) {
+  if (confirm(`Confirmer la conversion de la Proforma #${proforma.number} en Facture Définitive ?`)) {
     try {
       const definitive = window.store.convertProformaToDefinitive(id);
-      showToast(`Proforma convertie ! Facture Définitive #${definitive.number} générée et stock déduit.`, 'success');
+      showToast(`Proforma convertie ! Facture Définitive #${definitive.number} générée.`, 'success');
 
       renderInvoices();
       if (window.renderDashboard) window.renderDashboard();
@@ -540,6 +620,7 @@ function viewInvoiceDetail(invoiceId) {
   if (!inv) return;
 
   const isProforma = inv.type === 'PROFORMA';
+  const isService = inv.type === 'SERVICE';
   const settings = window.store.getSettings();
   const detailContainer = document.getElementById('printable-invoice-content');
   if (!detailContainer) return;
@@ -554,14 +635,14 @@ function viewInvoiceDetail(invoiceId) {
 
   const amountInWords = window.numberToWordsFR ? window.numberToWordsFR(inv.totalAmount) : window.formatFCFA(inv.totalAmount);
 
-  // Generate QR Code URL for Document Authenticity Check if enabled
+  // Generate QR Code URL for Document Authenticity Check
   const showQr = settings.showQrCode !== false;
   const qrData = encodeURIComponent(`2M GLOBAL SERVICES | Facture #${inv.number} | Client: ${inv.clientName} | Total: ${inv.totalAmount} FCFA | Date: ${formattedDate}`);
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${qrData}`;
 
   const itemRowsHtml = inv.items.map((item, idx) => {
-    const prod = window.store.getProductById(item.productId);
-    const sku = prod ? prod.sku : 'REF-' + (idx + 1);
+    const prod = item.productId ? window.store.getProductById(item.productId) : null;
+    const sku = prod ? prod.sku : (isService ? 'SERV-' + (idx + 1).toString().padStart(2, '0') : 'REF-' + (idx + 1));
     return `
       <tr>
         <td style="padding: 0.4rem; text-align: center; border-bottom: 1px solid var(--border-color);">${idx + 1}</td>
@@ -590,7 +671,6 @@ function viewInvoiceDetail(invoiceId) {
     `;
   }
 
-  // Payment Box or Quote Box depending on Proforma / Definitive
   const rightBoxHtml = isProforma ? `
     <div style="text-align: right; display: flex; flex-direction: column; justify-content: center; align-items: flex-end;">
       <span class="badge badge-info" style="font-size: 0.85rem; padding: 0.35rem 0.85rem;"><i class="fa-solid fa-file-lines"></i> DEVIS PROFORMA</span>
@@ -610,10 +690,12 @@ function viewInvoiceDetail(invoiceId) {
     `<img src="${settings.companyLogo}" alt="2M GLOBAL SERVICES" style="max-height: 65px; max-width: 200px; object-fit: contain; margin-bottom: 0.35rem; display: block;">` :
     `<h2 style="font-size: 1.4rem; color: var(--accent-primary); font-weight: 800; margin-bottom: 0.2rem;">${escapeHtml(settings.companyName)}</h2>`;
 
-  // Header date display: Proforma ONLY displays "Date: XX", NO due date!
   const headerDateHtml = isProforma ?
     `Date: <strong>${formattedDate}</strong>` :
     `Date: <strong>${formattedDate}</strong> | Échéance: <strong>${formattedDueDate}</strong>`;
+
+  const docTitle = isProforma ? 'FACTURE PROFORMA' : (isService ? 'FACTURE DE PRESTATION DE SERVICES' : 'FACTURE DÉFINITIVE');
+  const tableColHeader = isService ? 'Désignation des Prestations & Travaux Effectués' : 'Désignation des Prestations / Articles';
 
   const line1 = settings.invoiceFooterLine1 || '2M GLOBAL SERVICES - N.I.N.E.A: 012457695 - SN.DKR.2025.A.35597 - 35529/2025/RCCM/RA';
   const line2 = settings.invoiceFooterLine2 || 'Adresse: LIBERTE O1 VILLA N• 1336 - 📧 E-MAIL: 2mglobalservices11@gmail.COM - ☎️ Tél: 76-192-34-41';
@@ -621,7 +703,6 @@ function viewInvoiceDetail(invoiceId) {
   detailContainer.innerHTML = `
     <div style="padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-lg); border: 1px solid var(--border-color); font-size: 0.88rem; max-width: 800px; margin: 0 auto;">
       
-      <!-- Proforma Banner if applicable -->
       ${isProforma ? `
         <div style="background: rgba(245, 158, 11, 0.15); border: 1px dashed #f59e0b; padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); margin-bottom: 1rem; text-align: center; color: #d97706; font-weight: 700; font-size: 0.8rem;">
           <i class="fa-solid fa-triangle-exclamation"></i> FACTURE PROFORMA - OFFRE DE PRIX SANS VALEUR COMPTABLE NI FISCALE
@@ -629,7 +710,7 @@ function viewInvoiceDetail(invoiceId) {
       ` : ''}
 
       <!-- Company Header with Logo & QR Code -->
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid ${isProforma ? '#06b6d4' : '#f97316'}; padding-bottom: 1rem; margin-bottom: 1rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid ${isProforma ? '#06b6d4' : (isService ? '#0284c7' : '#f97316')}; padding-bottom: 1rem; margin-bottom: 1rem;">
         <div>
           ${logoImgHtml}
           <h2 style="font-size: 1.15rem; color: #0284c7; font-weight: 800; margin-bottom: 0.15rem;">${escapeHtml(settings.companyName)}</h2>
@@ -641,8 +722,8 @@ function viewInvoiceDetail(invoiceId) {
         <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem;">
           <div style="display: flex; gap: 0.85rem; align-items: center;">
             <div style="text-align: right;">
-              <h1 style="font-size: 1.5rem; letter-spacing: -0.03em; color: #0284c7; text-transform: uppercase; font-family: 'Outfit', sans-serif;">
-                ${isProforma ? 'FACTURE PROFORMA' : 'FACTURE DÉFINITIVE'}
+              <h1 style="font-size: 1.35rem; letter-spacing: -0.03em; color: #0284c7; text-transform: uppercase; font-family: 'Outfit', sans-serif;">
+                ${docTitle}
               </h1>
               <div style="font-family: monospace; font-size: 1.1rem; color: ${isProforma ? '#06b6d4' : '#f97316'}; font-weight: 800;">N° ${escapeHtml(inv.number)}</div>
             </div>
@@ -669,9 +750,9 @@ function viewInvoiceDetail(invoiceId) {
         <thead>
           <tr style="background: var(--bg-tertiary); text-transform: uppercase; font-size: 0.72rem; color: var(--text-secondary);">
             <th style="padding: 0.5rem; text-align: center;">#</th>
-            <th style="padding: 0.5rem; text-align: left;">Réf SKU</th>
-            <th style="padding: 0.5rem; text-align: left;">Désignation des Prestations / Articles</th>
-            <th style="padding: 0.5rem; text-align: center;">Qté</th>
+            <th style="padding: 0.5rem; text-align: left;">Réf SKU / Code</th>
+            <th style="padding: 0.5rem; text-align: left;">${tableColHeader}</th>
+            <th style="padding: 0.5rem; text-align: center;">Qté / Unité</th>
             <th style="padding: 0.5rem; text-align: right;">Prix Unitaire HT</th>
             <th style="padding: 0.5rem; text-align: right;">Montant Total HT</th>
           </tr>
@@ -718,7 +799,7 @@ function viewInvoiceDetail(invoiceId) {
 
       ${inv.notes ? `
         <div style="background: var(--bg-tertiary); padding: 0.6rem 1rem; border-radius: var(--radius-md); font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">
-          <strong>Remarques / Conditions :</strong> ${escapeHtml(inv.notes)}
+          <strong>Remarques / Conditions de la Prestation :</strong> ${escapeHtml(inv.notes)}
         </div>
       ` : ''}
 
@@ -750,4 +831,5 @@ function printInvoice() {
   window.print();
 }
 
+window.filterInvoiceList = filterInvoiceList;
 window.onPaymentMethodChange = onPaymentMethodChange;

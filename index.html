@@ -62,6 +62,10 @@
           <i class="fa-solid fa-file-export"></i>
           <span>Rapports & Exports</span>
         </a>
+        <a href="#" class="nav-item" data-view="admin-console" id="nav-admin-item" style="border-left: 3px solid #f97316; background: rgba(249, 115, 22, 0.1);">
+          <i class="fa-solid fa-crown" style="color: #f97316;"></i>
+          <span>Console Admin (Modif/Suppr)</span>
+        </a>
         <a href="#" class="nav-item" data-view="settings" style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: 0.85rem;">
           <i class="fa-solid fa-gear"></i>
           <span>Paramètres & Rôles</span>
@@ -144,6 +148,9 @@
             <div style="display: flex; gap: 0.5rem;">
               <button class="btn-secondary" onclick="openNewInvoiceModal('PROFORMA')">
                 <i class="fa-solid fa-file-lines"></i> Créer Proforma
+              </button>
+              <button class="btn-primary" style="background: linear-gradient(135deg, #0284c7, #0369a1);" onclick="openNewInvoiceModal('SERVICE')">
+                <i class="fa-solid fa-briefcase"></i> Facture Prestation
               </button>
               <button class="btn-secondary" onclick="openNewInvoiceModal('DEFINITIVE')">
                 <i class="fa-solid fa-file-invoice-dollar"></i> Créer Facture
@@ -297,21 +304,40 @@
           </div>
         </section>
 
-        <!-- VIEW 3: INVOICES (FACTURES PROFORMA & DÉFINITIVES) -->
+        <!-- VIEW 3: INVOICES (FACTURES PROFORMA, DÉFINITIVES & PRESTATIONS DE SERVICES) -->
         <section class="view-section" id="view-invoices">
           <div class="page-header">
             <div class="page-title">
-              <h1>Factures Proforma & Factures Définitives 2M GLOBAL SERVICES</h1>
-              <p>Créez des devis proforma ou des factures définitives. Format optimisé 1 page A4 avec QR Code d'authenticité.</p>
+              <h1>Factures Proforma, Commerciales & Prestations de Services</h1>
+              <p>Générez des devis, des factures d'articles ou des factures de prestations de services entièrement personnalisées.</p>
             </div>
-            <div style="display: flex; gap: 0.5rem;">
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button class="btn-primary" style="background: linear-gradient(135deg, #0284c7, #0369a1);" onclick="openNewInvoiceModal('SERVICE')">
+                <i class="fa-solid fa-briefcase"></i> + Facture Prestation
+              </button>
               <button class="btn-secondary" style="border-color: var(--info); color: var(--info);" onclick="openNewInvoiceModal('PROFORMA')">
                 <i class="fa-solid fa-file-lines"></i> + Créer Proforma
               </button>
               <button class="btn-success" onclick="openNewInvoiceModal('DEFINITIVE')">
-                <i class="fa-solid fa-receipt"></i> + Créer Facture Définitive
+                <i class="fa-solid fa-receipt"></i> + Créer Facture Vente
               </button>
             </div>
+          </div>
+
+          <!-- Document Type Filter Tabs -->
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+            <button class="btn-secondary inv-filter-btn active" data-filter="ALL" onclick="filterInvoiceList('ALL')">
+              <i class="fa-solid fa-layer-group"></i> Tous les Documents
+            </button>
+            <button class="btn-secondary inv-filter-btn" data-filter="SERVICE" onclick="filterInvoiceList('SERVICE')">
+              <i class="fa-solid fa-briefcase"></i> Prestations de Services
+            </button>
+            <button class="btn-secondary inv-filter-btn" data-filter="DEFINITIVE" onclick="filterInvoiceList('DEFINITIVE')">
+              <i class="fa-solid fa-file-invoice"></i> Factures Commerciales
+            </button>
+            <button class="btn-secondary inv-filter-btn" data-filter="PROFORMA" onclick="filterInvoiceList('PROFORMA')">
+              <i class="fa-solid fa-file-lines"></i> Devis Proforma
+            </button>
           </div>
 
           <div class="card" style="padding: 0;">
@@ -322,7 +348,7 @@
                     <th>N° Document</th>
                     <th>Type Document</th>
                     <th>Date</th>
-                    <th>Client</th>
+                    <th>Client / Raison Sociale</th>
                     <th>Mode Règlement</th>
                     <th>Montant Total TTC</th>
                     <th>Statut</th>
@@ -543,7 +569,50 @@
           </div>
         </section>
 
-        <!-- VIEW 9: SETTINGS & USER ROLES (PARAMÈTRES 2M GLOBAL SERVICES & RBAC) -->
+        <!-- VIEW 9: ADMIN CONSOLE HUB (ACCÈS RÉSERVÉ ADMINISTRATEUR GÉNÉRAL) -->
+        <section class="view-section" id="view-admin-console">
+          <div class="page-header">
+            <div class="page-title">
+              <h1><i class="fa-solid fa-crown" style="color: #f97316;"></i> Console d'Administration Général</h1>
+              <p>Centre de contrôle réservé à l'<strong>Administrateur Général</strong> pour éditer ou supprimer les données (Factures, Bons de Commande, Produits, Mouvements, Catégories).</p>
+            </div>
+          </div>
+
+          <!-- Non-Admin Warning Banner -->
+          <div id="admin-access-warning" class="card" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px dashed var(--danger); text-align: center; padding: 2rem; margin-bottom: 1rem;">
+            <i class="fa-solid fa-lock" style="font-size: 3rem; color: var(--danger); margin-bottom: 0.75rem;"></i>
+            <h2 style="color: var(--danger); font-size: 1.2rem;">Accès Réservé à l'Administrateur Général</h2>
+            <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.9rem;">
+              Votre profil actuel (Magasinier ou Vendeur) ne dispose pas des privilèges requis pour accéder à cette console de gestion. Veuillez basculer vers le rôle <strong>Administrateur Général</strong> dans le menu latéral.
+            </p>
+          </div>
+
+          <!-- Sub-Tab Navigation for Admin Console -->
+          <div id="admin-tab-nav" style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
+            <button class="btn-secondary admin-tab-btn active" data-tab="invoices" onclick="renderAdminConsole('invoices')">
+              <i class="fa-solid fa-file-invoice-dollar"></i> Factures & Devis
+            </button>
+            <button class="btn-secondary admin-tab-btn" data-tab="pos" onclick="renderAdminConsole('pos')">
+              <i class="fa-solid fa-file-contract"></i> Bons de Commande
+            </button>
+            <button class="btn-secondary admin-tab-btn" data-tab="products" onclick="renderAdminConsole('products')">
+              <i class="fa-solid fa-boxes-stacked"></i> Produits & Inventaire
+            </button>
+            <button class="btn-secondary admin-tab-btn" data-tab="movements" onclick="renderAdminConsole('movements')">
+              <i class="fa-solid fa-right-left"></i> Mouvements de Stock
+            </button>
+            <button class="btn-secondary admin-tab-btn" data-tab="categories" onclick="renderAdminConsole('categories')">
+              <i class="fa-solid fa-tags"></i> Catégories
+            </button>
+          </div>
+
+          <!-- Dynamic Content Container -->
+          <div id="admin-tab-content">
+            <!-- Rendered by admin_console.js -->
+          </div>
+        </section>
+
+        <!-- VIEW 10: SETTINGS & USER ROLES (PARAMÈTRES 2M GLOBAL SERVICES & RBAC) -->
         <section class="view-section" id="view-settings">
           <div class="page-header">
             <div class="page-title">
@@ -893,7 +962,7 @@
   <div class="modal-backdrop" id="modal-invoice-create">
     <div class="modal-card" style="max-width: 820px;">
       <div class="modal-header">
-        <h3 id="invoice-modal-title">Nouvelle Facture (Proforma / Définitive)</h3>
+        <h3 id="invoice-modal-title">Nouvelle Facture</h3>
         <button class="icon-btn" onclick="closeModal('modal-invoice-create')"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form id="invoice-form" onsubmit="handleInvoiceSubmit(event)">
@@ -906,8 +975,9 @@
           <div class="form-group" style="background: var(--bg-tertiary); padding: 0.85rem 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; border-left: 4px solid var(--accent-primary);">
             <label style="color: var(--accent-primary);"><i class="fa-solid fa-file-signature"></i> Type de Document à Générer *</label>
             <select id="inv-type-select" class="form-control" onchange="onInvoiceTypeChange(this.value)" required style="font-weight: 700; font-size: 0.95rem; margin-top: 0.2rem;">
-              <option value="DEFINITIVE">Facture Définitive (Commerciale - Déduit le stock automatiquement)</option>
-              <option value="PROFORMA">Facture Proforma (Devis / Offre de prix - Sans déduction de stock)</option>
+              <option value="SERVICE">💼 Facture de Prestation de Services (Description libre & Honoraires)</option>
+              <option value="DEFINITIVE">📦 Facture Commerciale (Vente d'articles - Déduit le stock)</option>
+              <option value="PROFORMA">📄 Facture Proforma (Devis / Offre de prix)</option>
             </select>
             <div id="inv-type-helptext" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.4rem;"></div>
           </div>
@@ -915,7 +985,7 @@
           <div class="form-grid">
             <div class="form-group">
               <label>Nom ou Raison Sociale du Client *</label>
-              <input type="text" id="inv-client-name" class="form-control" placeholder="Ex: Société SOTRA CI ou Client Passage" required>
+              <input type="text" id="inv-client-name" class="form-control" placeholder="Ex: Ministère des Transports ou Société SOTRA CI" required>
             </div>
             <div class="form-group">
               <label>Téléphone Client</label>
@@ -926,16 +996,16 @@
           <div class="form-grid">
             <div class="form-group">
               <label>N° RCCM / Registre du Client (Optionnel)</label>
-              <input type="text" id="inv-client-taxid" class="form-control" placeholder="Ex: RCCM: CI-ABJ-2024-B-98765">
+              <input type="text" id="inv-client-taxid" class="form-control" placeholder="Ex: NINEA: 0098765432">
             </div>
             <div class="form-group" id="inv-payment-group">
               <label>Mode de Règlement *</label>
               <select id="inv-payment-method" class="form-control" onchange="onPaymentMethodChange(this.value)" style="font-weight: 600;">
+                <option value="Virement bancaire">Virement bancaire</option>
                 <option value="Espèces">Espèces</option>
                 <option value="Wave">Wave</option>
                 <option value="Orange Money">Orange Money</option>
                 <option value="Chèque">Chèque</option>
-                <option value="Virement bancaire">Virement bancaire</option>
                 <option value="Autre">Autre (à préciser)</option>
               </select>
               <input type="text" id="inv-payment-other" class="form-control" placeholder="Précisez le mode de règlement..." style="display: none; margin-top: 0.4rem;">
@@ -957,7 +1027,7 @@
           </div>
 
           <div style="margin-top: 1rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
-            <h4 style="font-size: 0.95rem; color: var(--text-primary);">Désignation des Articles & Prestations</h4>
+            <h4 style="font-size: 0.95rem; color: var(--text-primary);">Désignation des Prestations, Services ou Articles</h4>
             <button type="button" class="btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick="addInvoiceItemRow()">
               <i class="fa-solid fa-plus"></i> Ajouter une ligne
             </button>
@@ -1003,7 +1073,7 @@
 
           <div class="form-group" style="margin-top: 1rem;">
             <label>Conditions de vente & Remarques (Optionnel)</label>
-            <input type="text" id="inv-notes" class="form-control" placeholder="Ex: Offre de prix valable 30 jours, Garantie 12 mois...">
+            <input type="text" id="inv-notes" class="form-control" placeholder="Ex: Prestation réalisée selon le cahier des charges, Garantie 12 mois...">
           </div>
 
         </div>
@@ -1177,6 +1247,7 @@
   <script src="js/components/categories.js"></script>
   <script src="js/components/reports.js"></script>
   <script src="js/components/settings.js"></script>
+  <script src="js/components/admin_console.js"></script>
   <script src="js/app.js"></script>
 
 </body>
