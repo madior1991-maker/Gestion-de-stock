@@ -96,7 +96,7 @@ function renderInvoices() {
 
     const paymentDisplay = isProforma ?
       '<span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">— Offre Proforma</span>' :
-      `<span class="badge badge-secondary"><i class="fa-solid fa-credit-card" style="font-size:0.7rem;"></i> ${escapeHtml(inv.paymentMethod || 'Espèces')}</span>`;
+      `<span class="badge badge-secondary"><i class="fa-solid fa-credit-card" style="font-size:0.7rem;"></i> ${escapeHtml(inv.paymentMethod || 'Virement bancaire')}</span>`;
 
     return `
       <tr>
@@ -158,8 +158,8 @@ function openNewInvoiceModal(defaultType = 'DEFINITIVE') {
 
   const paymentSelect = document.getElementById('inv-payment-method');
   if (paymentSelect) {
-    paymentSelect.value = 'Espèces';
-    onPaymentMethodChange('Espèces');
+    paymentSelect.value = defaultType === 'SERVICE' ? 'Virement bancaire' : 'Espèces';
+    onPaymentMethodChange(paymentSelect.value);
   }
 
   const clientInput = document.getElementById('inv-client-name');
@@ -226,7 +226,7 @@ function openEditInvoiceModal(invoiceId) {
   document.getElementById('inv-client-taxid').value = inv.clientTaxId || '';
 
   const knownMethods = ['Espèces', 'Wave', 'Orange Money', 'Chèque', 'Virement bancaire'];
-  const pMethod = inv.paymentMethod || 'Espèces';
+  const pMethod = inv.paymentMethod || 'Virement bancaire';
   if (knownMethods.includes(pMethod)) {
     document.getElementById('inv-payment-method').value = pMethod;
     onPaymentMethodChange(pMethod);
@@ -614,7 +614,7 @@ function convertProformaToDefinitiveWithConfirm(id) {
   }
 }
 
-// Display Ultra-Clean 1-Page A4 Invoice Document Template with Official Company Legal Footer
+// Display Ultra-Clean 1-Page A4 Invoice Document Template with Official Company Legal Footer & Payment Details
 function viewInvoiceDetail(invoiceId) {
   const inv = window.store.getInvoiceById(invoiceId);
   if (!inv) return;
@@ -679,7 +679,7 @@ function viewInvoiceDetail(invoiceId) {
   ` : `
     <div style="text-align: right;">
       <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">MODALITÉS DE RÈGLEMENT :</span>
-      <p style="font-size: 0.9rem; color: var(--text-primary); font-weight: 600; margin-top: 0.1rem;">Mode: <strong>${escapeHtml(inv.paymentMethod || 'Espèces')}</strong></p>
+      <p style="font-size: 0.9rem; color: var(--text-primary); font-weight: 600; margin-top: 0.1rem;">Mode: <strong>${escapeHtml(inv.paymentMethod || 'Virement bancaire')}</strong></p>
       <div style="margin-top: 0.35rem;">
         ${inv.status === 'PAID' ? '<span class="badge badge-success" style="font-size: 0.78rem; padding: 0.25rem 0.65rem;"><i class="fa-solid fa-circle-check"></i> FACTURE PAYÉE</span>' : '<span class="badge badge-warning" style="font-size: 0.78rem; padding: 0.25rem 0.65rem;"><i class="fa-solid fa-clock"></i> EN ATTENTE DE RÈGLEMENT</span>'}
       </div>
@@ -803,8 +803,40 @@ function viewInvoiceDetail(invoiceId) {
         </div>
       ` : ''}
 
+      <!-- Official Bank RIB & Mobile Money Payment Modalities Block -->
+      <div style="margin-top: 1rem; background: var(--bg-tertiary); padding: 0.85rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 0.8rem; line-height: 1.4;">
+        <h4 style="font-size: 0.82rem; color: var(--accent-primary); text-transform: uppercase; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+          <i class="fa-solid fa-building-columns"></i> MODALITÉS DE RÈGLEMENT & COORDONNÉES BANCAIRES
+        </h4>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <!-- Bank & Check Wire Details -->
+          <div style="border-right: 1px solid var(--border-color); padding-right: 0.75rem;">
+            <p style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
+              <i class="fa-solid fa-money-check-dollar" style="color: var(--success);"></i> Par virement bancaire ou chèque :
+            </p>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.15rem;">
+              <div><strong>Banque :</strong> CBAO</div>
+              <div><strong>IBAN :</strong> <span style="font-family: monospace; font-weight: 700; color: var(--text-primary);">SN08 SN012 012120 35207043601 08</span></div>
+              <div><strong>Code SWIFT :</strong> <span style="font-family: monospace; font-weight: 700; color: var(--text-primary);">CBAOSNDA</span></div>
+            </div>
+          </div>
+
+          <!-- Mobile Money Details (Wave / Orange Money) -->
+          <div>
+            <p style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
+              <i class="fa-solid fa-mobile-screen-button" style="color: #0284c7;"></i> Par Wave ou Orange Money :
+            </p>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.15rem;">
+              <div>📲 <strong>+221 77 171 51 29</strong></div>
+              <div>📲 <strong>+221 76 192 34 41</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Signatures & Electronic Stamp Box -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.25rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
         <div style="text-align: center;">
           <p style="font-weight: 700; color: var(--text-primary); font-size: 0.8rem; text-transform: uppercase;">Pour le Client (Signature)</p>
           <div style="height: 60px; margin-top: 0.35rem; border: 1px dashed var(--border-color); border-radius: var(--radius-md);"></div>
