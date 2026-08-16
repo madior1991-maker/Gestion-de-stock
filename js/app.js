@@ -39,6 +39,9 @@ function switchView(viewId) {
     case 'invoices':
       if (window.renderInvoices) window.renderInvoices();
       break;
+    case 'clients':
+      if (window.renderClients) window.renderClients();
+      break;
     case 'purchase-orders':
       if (window.renderPurchaseOrders) window.renderPurchaseOrders();
       break;

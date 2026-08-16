@@ -34,9 +34,11 @@ function renderSettings() {
   // Advanced policy options
   const showQrCodeEl = document.getElementById('set-show-qrcode');
   const allowNegativeEl = document.getElementById('set-allow-negative');
+  const waCountryCodeEl = document.getElementById('set-wa-country-code');
 
   if (showQrCodeEl) showQrCodeEl.checked = settings.showQrCode !== false;
   if (allowNegativeEl) allowNegativeEl.checked = !!settings.allowNegativeStock;
+  if (waCountryCodeEl) waCountryCodeEl.value = settings.waCountryCode || '221';
 
   // Electronic Stamp Preview
   renderStampPreview(settings.companyStamp);
@@ -268,6 +270,7 @@ function handleSettingsSubmit(e) {
 
   const showQrCode = document.getElementById('set-show-qrcode') ? document.getElementById('set-show-qrcode').checked : true;
   const allowNegativeStock = document.getElementById('set-allow-negative') ? document.getElementById('set-allow-negative').checked : false;
+  const waCountryCode = document.getElementById('set-wa-country-code') ? document.getElementById('set-wa-country-code').value : '221';
 
   const invoiceFooterLine1 = `2M GLOBAL SERVICES - ${companyTaxId}`;
   const invoiceFooterLine2 = `Adresse: ${companyAddress} - 📧 E-MAIL: ${companyEmail} - ☎️ Tél: ${companyPhone}`;
@@ -286,6 +289,7 @@ function handleSettingsSubmit(e) {
       poPrefix,
       showQrCode,
       allowNegativeStock,
+      waCountryCode,
       invoiceFooterLine1,
       invoiceFooterLine2
     });

@@ -124,6 +124,9 @@ function renderInvoices() {
             <button class="btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.78rem;" onclick="viewInvoiceDetail('${inv.id}')">
               <i class="fa-solid fa-print"></i> Aperçu
             </button>
+            <button class="btn-success" style="padding: 0.3rem 0.6rem; font-size: 0.78rem; background: #25D366; border-color: #25D366; font-weight: 600;" onclick="openWhatsAppModal('${inv.id}')" title="Envoyer directement la facture au client sur WhatsApp">
+              <i class="fa-brands fa-whatsapp"></i> WhatsApp
+            </button>
           </div>
         </td>
       </tr>
@@ -161,6 +164,8 @@ function openNewInvoiceModal(defaultType = 'DEFINITIVE') {
     paymentSelect.value = defaultType === 'SERVICE' ? 'Virement bancaire' : 'Espèces';
     onPaymentMethodChange(paymentSelect.value);
   }
+
+  populateInvoiceClientDropdown();
 
   const clientInput = document.getElementById('inv-client-name');
   if (clientInput) clientInput.value = 'Client Passage';
@@ -616,6 +621,7 @@ function convertProformaToDefinitiveWithConfirm(id) {
 
 // Display Ultra-Clean 1-Page A4 Invoice Document Template with Official Company Legal Footer & Payment Details
 function viewInvoiceDetail(invoiceId) {
+  window.currentDetailInvoiceId = invoiceId;
   const inv = window.store.getInvoiceById(invoiceId);
   if (!inv) return;
 
@@ -863,5 +869,351 @@ function printInvoice() {
   window.print();
 }
 
+// ==========================================================================
+// WhatsApp Direct Invoice Sending Engine
+// ==========================================================================
+
+let currentWhatsAppInvoiceId = null;
+window.currentDetailInvoiceId = null;
+
+function openWhatsAppModal(invoiceId) {
+  const inv = window.store.getInvoiceById(invoiceId);
+  if (!inv) {
+    showToast('Facture introuvable.', 'danger');
+    return;
+  }
+
+  currentWhatsAppInvoiceId = invoiceId;
+  const settings = window.store.getSettings();
+  const defaultCountryCode = settings.waCountryCode || '221';
+
+  // Set brief card info
+  const briefEl = document.getElementById('wa-invoice-brief');
+  if (briefEl) {
+    const isProforma = inv.type === 'PROFORMA';
+    const isService = inv.type === 'SERVICE';
+    const docTitle = isProforma ? 'Devis Proforma' : (isService ? 'Facture Prestation' : 'Facture Définitive');
+
+    briefEl.innerHTML = `
+      <div>
+        <strong style="color: var(--accent-primary); font-size: 1.05rem;">${docTitle} #${escapeHtml(inv.number)}</strong>
+        <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.15rem;">
+          Client: <strong>${escapeHtml(inv.clientName)}</strong> | Date: ${new Date(inv.date).toLocaleDateString('fr-FR')}
+        </div>
+      </div>
+      <div style="text-align: right;">
+        <span style="font-size: 1.1rem; font-weight: 800; color: #25D366;">${window.formatFCFA(inv.totalAmount)}</span>
+      </div>
+    `;
+  }
+
+  // Pre-fill phone number
+  const phoneInput = document.getElementById('wa-client-phone');
+  if (phoneInput) {
+    phoneInput.value = inv.clientPhone || '';
+  }
+
+  // Country code select
+  const countrySelect = document.getElementById('wa-country-code');
+  if (countrySelect) {
+    countrySelect.value = defaultCountryCode;
+  }
+
+  updateWhatsAppMessagePreview();
+  openModal('modal-whatsapp-share');
+}
+
+function openWhatsAppModalFromDetail() {
+  if (window.currentDetailInvoiceId) {
+    openWhatsAppModal(window.currentDetailInvoiceId);
+  }
+}
+
+function cleanPhoneNumber(phoneStr, countryCode = '221') {
+  if (!phoneStr) return '';
+  let cleaned = phoneStr.replace(/[^\d+]/g, '');
+
+  if (cleaned.startsWith('+')) {
+    return cleaned.substring(1);
+  }
+
+  if (cleaned.startsWith('00')) {
+    return cleaned.substring(2);
+  }
+
+  if (countryCode === 'AUTRE') {
+    return cleaned;
+  }
+
+  if (cleaned.startsWith('0') && cleaned.length >= 9) {
+    cleaned = cleaned.substring(1);
+  }
+
+  if (countryCode && !cleaned.startsWith(countryCode) && cleaned.length <= 10) {
+    cleaned = countryCode + cleaned;
+  }
+
+  return cleaned;
+}
+
+function generateWhatsAppInvoiceMessage(inv, includeItems = true, includePayment = true) {
+  const settings = window.store.getSettings();
+  const isProforma = inv.type === 'PROFORMA';
+  const isService = inv.type === 'SERVICE';
+
+  const docTitle = isProforma ? 'DEVIS PROFORMA' : (isService ? 'FACTURE DE PRESTATION DE SERVICES' : 'FACTURE DÉFINITIVE');
+  const formattedDate = new Date(inv.date).toLocaleDateString('fr-FR');
+  const companyName = settings.companyName || '2M GLOBAL SERVICES';
+
+  let msg = `📄 *${companyName.toUpperCase()}*\n`;
+  msg += `-------------------------------------------\n`;
+  msg += `🧾 *${docTitle} N° ${inv.number}*\n`;
+  msg += `👤 *Client :* ${inv.clientName}\n`;
+  msg += `📅 *Date :* ${formattedDate}\n`;
+
+  if (inv.dueDate && !isProforma) {
+    const formattedDue = new Date(inv.dueDate).toLocaleDateString('fr-FR');
+    msg += `⏳ *Échéance :* ${formattedDue}\n`;
+  }
+
+  msg += `-------------------------------------------\n`;
+
+  if (includeItems && inv.items && inv.items.length > 0) {
+    msg += `📦 *DÉTAILS DES PRESTATIONS / ARTICLES :*\n`;
+    inv.items.forEach((item) => {
+      msg += `• *${item.productName}*\n  └ Qté : ${item.quantity} x ${window.formatFCFA(item.unitPrice)} = *${window.formatFCFA(item.total)}*\n`;
+    });
+    msg += `-------------------------------------------\n`;
+  }
+
+  msg += `💵 *Sous-Total HT :* ${window.formatFCFA(inv.subtotal)}\n`;
+  if (inv.discountAmount > 0) {
+    msg += `🏷️ *Remise Accordée :* -${window.formatFCFA(inv.discountAmount)}\n`;
+  }
+  if (inv.vatAmount > 0) {
+    msg += `🏛️ *TVA (${inv.vatRate || 18}%) :* ${window.formatFCFA(inv.vatAmount)}\n`;
+  }
+  msg += `💰 *TOTAL TTC :* *${window.formatFCFA(inv.totalAmount)}*\n`;
+
+  if (!isProforma) {
+    const statusLabel = inv.status === 'PAID' ? 'Payée ✅' : 'En attente de règlement ⏳';
+    msg += `📌 *Statut :* ${statusLabel}\n`;
+    msg += `💳 *Mode de Règlement :* ${inv.paymentMethod || 'Virement bancaire'}\n`;
+  }
+
+  if (includePayment) {
+    msg += `-------------------------------------------\n`;
+    msg += `🏦 *COORDONNÉES DE RÈGLEMENT :*\n`;
+    msg += `• *Virement / Chèque :* CBAO (IBAN: SN08 SN012 012120 35207043601 08)\n`;
+    msg += `• *Wave / Orange Money :* 📲 +221 77 171 51 29 / +221 76 192 34 41\n`;
+  }
+
+  msg += `-------------------------------------------\n`;
+  if (inv.notes) {
+    msg += `📝 *Notes :* ${inv.notes}\n`;
+  }
+
+  msg += `✨ *Merci pour votre confiance !*\n`;
+  msg += `📞 *Contact :* ${settings.companyPhone || '76-192-34-41'} | 📧 ${settings.companyEmail || '2mglobalservices11@gmail.COM'}`;
+
+  return msg;
+}
+
+function updateWhatsAppMessagePreview() {
+  if (!currentWhatsAppInvoiceId) return;
+
+  const inv = window.store.getInvoiceById(currentWhatsAppInvoiceId);
+  if (!inv) return;
+
+  const countryCode = document.getElementById('wa-country-code')?.value || '221';
+  const rawPhone = document.getElementById('wa-client-phone')?.value || '';
+  const formattedPhone = cleanPhoneNumber(rawPhone, countryCode);
+
+  const numDisplay = document.getElementById('wa-formatted-num-display');
+  if (numDisplay) {
+    numDisplay.textContent = formattedPhone ? `📲 Format WhatsApp : +${formattedPhone}` : '⚠️ Saisissez un numéro';
+  }
+
+  const includeItems = document.getElementById('wa-opt-items')?.checked !== false;
+  const includePayment = document.getElementById('wa-opt-payment')?.checked !== false;
+
+  const msgPreview = document.getElementById('wa-message-preview');
+  if (msgPreview) {
+    msgPreview.value = generateWhatsAppInvoiceMessage(inv, includeItems, includePayment);
+  }
+}
+
+function sendWhatsAppMessageFromModal() {
+  const countryCode = document.getElementById('wa-country-code')?.value || '221';
+  const rawPhone = document.getElementById('wa-client-phone')?.value || '';
+  const formattedPhone = cleanPhoneNumber(rawPhone, countryCode);
+
+  if (!formattedPhone || formattedPhone.length < 7) {
+    showToast('Veuillez saisir un numéro de téléphone WhatsApp valide.', 'warning');
+    return;
+  }
+
+  const msgText = document.getElementById('wa-message-preview')?.value || '';
+  const encodedMsg = encodeURIComponent(msgText);
+  const waUrl = `https://wa.me/${formattedPhone}?text=${encodedMsg}`;
+
+  window.open(waUrl, '_blank');
+  showToast(`Redirection WhatsApp vers +${formattedPhone}...`, 'success');
+}
+
+function copyWhatsAppMessageToClipboard() {
+  const msgText = document.getElementById('wa-message-preview')?.value || '';
+  if (!msgText) return;
+
+  navigator.clipboard.writeText(msgText).then(() => {
+    showToast('Texte de la facture copié dans le presse-papier !', 'success');
+  }).catch(err => {
+    showToast('Erreur lors de la copie du message.', 'danger');
+  });
+}
+
+function downloadInvoicePDF(invoiceId) {
+  if (!invoiceId) return;
+  const inv = window.store.getInvoiceById(invoiceId);
+  if (!inv) return;
+
+  viewInvoiceDetail(invoiceId);
+  const element = document.getElementById('printable-invoice-content');
+  if (!element) return;
+
+  showToast(`Génération du fichier PDF pour la Facture #${inv.number}...`, 'info');
+
+  const opt = {
+    margin: [6, 6, 6, 6],
+    filename: `Facture_${inv.number}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, logging: false },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  if (window.html2pdf) {
+    window.html2pdf().set(opt).from(element).save().then(() => {
+      showToast(`Facture #${inv.number} téléchargée en PDF avec succès !`, 'success');
+    }).catch(err => {
+      showToast('Erreur génération PDF: ' + err.message, 'danger');
+    });
+  } else {
+    printInvoice();
+  }
+}
+
+function downloadInvoicePDFFromModal() {
+  if (currentWhatsAppInvoiceId) {
+    downloadInvoicePDF(currentWhatsAppInvoiceId);
+  }
+}
+
+async function shareInvoicePDFWhatsApp() {
+  if (!currentWhatsAppInvoiceId) return;
+  const inv = window.store.getInvoiceById(currentWhatsAppInvoiceId);
+  if (!inv) return;
+
+  const settings = window.store.getSettings();
+  const countryCode = document.getElementById('wa-country-code')?.value || '221';
+  const rawPhone = document.getElementById('wa-client-phone')?.value || '';
+  const formattedPhone = cleanPhoneNumber(rawPhone, countryCode);
+
+  const msgText = document.getElementById('wa-message-preview')?.value || '';
+
+  showToast(`Génération du PDF officiel pour la Facture #${inv.number}...`, 'info');
+
+  viewInvoiceDetail(currentWhatsAppInvoiceId);
+  const element = document.getElementById('printable-invoice-content');
+  if (!element) return;
+
+  const opt = {
+    margin: [6, 6, 6, 6],
+    filename: `Facture_${inv.number}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, logging: false },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  try {
+    if (!window.html2pdf) {
+      downloadInvoicePDF(currentWhatsAppInvoiceId);
+      return;
+    }
+
+    const pdfBlob = await window.html2pdf().set(opt).from(element).outputPdf('blob');
+    const fileName = `Facture_${inv.number}.pdf`;
+    const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+    // Native Web Share API (smartphones / mobile browsers / supported Edge/Chrome)
+    if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+      await navigator.share({
+        title: `Facture ${inv.number} - ${settings.companyName || '2M GLOBAL SERVICES'}`,
+        text: msgText,
+        files: [pdfFile]
+      });
+      showToast('Fichier PDF et message partagés sur WhatsApp !', 'success');
+    } else {
+      // Desktop Web WhatsApp fallback:
+      // 1. Download PDF file automatically
+      const downloadUrl = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 5000);
+
+      // 2. Open WhatsApp Web / App
+      const encodedMsg = encodeURIComponent(msgText);
+      const waUrl = formattedPhone ? `https://wa.me/${formattedPhone}?text=${encodedMsg}` : `https://wa.me/?text=${encodedMsg}`;
+      window.open(waUrl, '_blank');
+
+      // 3. Show guidance toast
+      showToast(`📄 PDF "${fileName}" téléchargé ! Glissez-déposez le fichier dans la discussion WhatsApp.`, 'success', 8000);
+    }
+  } catch (err) {
+    console.error('Erreur lors du partage PDF:', err);
+    showToast('Erreur lors du partage du PDF: ' + err.message, 'danger');
+  }
+}
+
+function populateInvoiceClientDropdown(selectedClientId = '') {
+  const selectEl = document.getElementById('inv-client-select');
+  if (!selectEl) return;
+
+  const clients = window.store.getClients();
+  let optionsHtml = `<option value="">-- Choisir un client du portefeuille --</option>`;
+  optionsHtml += clients.map(c => `<option value="${c.id}" ${c.id === selectedClientId ? 'selected' : ''}>${escapeHtml(c.name)} (${c.code || ''}) - ${escapeHtml(c.phone || '')}</option>`).join('');
+  optionsHtml += `<option value="MANUAL">✏️ Saisir manuellement un autre nom de client...</option>`;
+
+  selectEl.innerHTML = optionsHtml;
+}
+
+function onInvoiceClientSelect(clientId) {
+  if (!clientId || clientId === 'MANUAL') return;
+
+  const client = window.store.getClientById(clientId);
+  if (!client) return;
+
+  const nameInput = document.getElementById('inv-client-name');
+  const phoneInput = document.getElementById('inv-client-phone');
+  const taxInput = document.getElementById('inv-client-taxid');
+
+  if (nameInput) nameInput.value = client.name;
+  if (phoneInput) phoneInput.value = client.phone || '';
+  if (taxInput) taxInput.value = client.taxId || '';
+}
+
 window.filterInvoiceList = filterInvoiceList;
 window.onPaymentMethodChange = onPaymentMethodChange;
+window.openWhatsAppModal = openWhatsAppModal;
+window.openWhatsAppModalFromDetail = openWhatsAppModalFromDetail;
+window.updateWhatsAppMessagePreview = updateWhatsAppMessagePreview;
+window.sendWhatsAppMessageFromModal = sendWhatsAppMessageFromModal;
+window.copyWhatsAppMessageToClipboard = copyWhatsAppMessageToClipboard;
+window.downloadInvoicePDF = downloadInvoicePDF;
+window.downloadInvoicePDFFromModal = downloadInvoicePDFFromModal;
+window.shareInvoicePDFWhatsApp = shareInvoicePDFWhatsApp;
+window.populateInvoiceClientDropdown = populateInvoiceClientDropdown;
+window.onInvoiceClientSelect = onInvoiceClientSelect;

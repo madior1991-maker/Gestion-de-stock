@@ -11,6 +11,9 @@
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <!-- html2pdf.js CDN for PDF Generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -40,6 +43,10 @@
         <a href="#" class="nav-item" data-view="invoices">
           <i class="fa-solid fa-file-invoice-dollar"></i>
           <span>Factures & Ventes</span>
+        </a>
+        <a href="#" class="nav-item" data-view="clients">
+          <i class="fa-solid fa-address-book"></i>
+          <span>Portefeuille Clients</span>
         </a>
         <a href="#" class="nav-item" data-view="purchase-orders">
           <i class="fa-solid fa-file-contract"></i>
@@ -356,6 +363,92 @@
                   </tr>
                 </thead>
                 <tbody id="invoices-table-body">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: CLIENT PORTFOLIO (PORTEFEUILLE CLIENTS & CRM) -->
+        <section class="view-section" id="view-clients">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Portefeuille Clients & Suivi Commercial</h1>
+              <p>Gérez vos clients, consultez leur historique d'achats et contactez-les directement via WhatsApp.</p>
+            </div>
+            <button class="btn-primary" onclick="openClientModal()">
+              <i class="fa-solid fa-user-plus"></i> + Nouveau Client
+            </button>
+          </div>
+
+          <!-- KPI Cards for Clients -->
+          <div class="kpi-grid">
+            <div class="kpi-card kpi-primary">
+              <div class="kpi-data">
+                <h3>Total Portefeuille Clients</h3>
+                <div class="value" id="kpi-total-clients">0</div>
+                <div class="subtext"><i class="fa-solid fa-address-book"></i> Contacts enregistrés</div>
+              </div>
+              <div class="kpi-icon"><i class="fa-solid fa-users"></i></div>
+            </div>
+
+            <div class="kpi-card kpi-info">
+              <div class="kpi-data">
+                <h3>Entreprises & Sociétés</h3>
+                <div class="value" id="kpi-company-clients">0</div>
+                <div class="subtext"><i class="fa-solid fa-building"></i> Grands comptes B2B</div>
+              </div>
+              <div class="kpi-icon"><i class="fa-solid fa-city"></i></div>
+            </div>
+
+            <div class="kpi-card kpi-warning">
+              <div class="kpi-data">
+                <h3>Clients Particuliers</h3>
+                <div class="value" id="kpi-individual-clients">0</div>
+                <div class="subtext"><i class="fa-solid fa-user"></i> Acheteurs individuels</div>
+              </div>
+              <div class="kpi-icon"><i class="fa-solid fa-user-tag"></i></div>
+            </div>
+
+            <div class="kpi-card kpi-success">
+              <div class="kpi-data">
+                <h3>CA Portefeuille Total</h3>
+                <div class="value" id="kpi-portfolio-revenue">0 FCFA</div>
+                <div class="subtext"><i class="fa-solid fa-chart-line"></i> Cumul ventes clients</div>
+              </div>
+              <div class="kpi-icon"><i class="fa-solid fa-wallet"></i></div>
+            </div>
+          </div>
+
+          <!-- Filter & Search Bar -->
+          <div class="filter-bar">
+            <div class="filter-group">
+              <input type="text" id="search-clients" class="form-control" placeholder="Rechercher nom, code, tél, ville..." style="min-width: 260px;" oninput="renderClients()">
+              <select id="filter-client-type" class="form-control" onchange="renderClients()">
+                <option value="ALL">Tous les types (Entreprises & Particuliers)</option>
+                <option value="COMPANY">Entreprises / Sociétés</option>
+                <option value="INDIVIDUAL">Clients Particuliers</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Clients Table Card -->
+          <div class="card" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Code Client</th>
+                    <th>Nom / Raison Sociale</th>
+                    <th>Type</th>
+                    <th>Contact & Adresse</th>
+                    <th>Chiffre d'Affaires Total</th>
+                    <th>Dernier Achat</th>
+                    <th>Actions Rapides</th>
+                  </tr>
+                </thead>
+                <tbody id="clients-table-body">
                   <!-- Populated by JS -->
                 </tbody>
               </table>
@@ -753,6 +846,26 @@
                   </label>
                 </div>
 
+                <div class="form-group" style="margin-top: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+                  <label style="color: #25D366; font-weight: 700;"><i class="fa-brands fa-whatsapp"></i> Configuration Envoi WhatsApp</label>
+                  <label style="font-size: 0.78rem; margin-top: 0.2rem; color: var(--text-secondary);">Indicatif Pays par Défaut</label>
+                  <select id="set-wa-country-code" class="form-control" style="margin-top: 0.2rem;">
+                    <option value="221">🇸🇳 Sénégal (+221)</option>
+                    <option value="225">🇨🇮 Côte d'Ivoire (+225)</option>
+                    <option value="223">🇲🇱 Mali (+223)</option>
+                    <option value="224">🇬🇳 Guinée (+224)</option>
+                    <option value="226">🇧🇫 Burkina Faso (+226)</option>
+                    <option value="228">🇹🇬 Togo (+228)</option>
+                    <option value="229">🇧BJ Bénin (+229)</option>
+                    <option value="237">🇨🇲 Cameroun (+237)</option>
+                    <option value="242">🇨🇬 Congo (+242)</option>
+                    <option value="243">🇨🇩 RDC (+243)</option>
+                    <option value="212">🇲🇦 Maroc (+212)</option>
+                    <option value="33">🇫🇷 France (+33)</option>
+                    <option value="1">🇺🇸 USA/Canada (+1)</option>
+                  </select>
+                </div>
+
                 <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">
                   <i class="fa-solid fa-floppy-disk"></i> Enregistrer les Paramètres
                 </button>
@@ -982,6 +1095,13 @@
             <div id="inv-type-helptext" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.4rem;"></div>
           </div>
           
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <label style="font-size: 0.78rem; font-weight: 700; color: var(--accent-primary);"><i class="fa-solid fa-address-book"></i> Sélectionner depuis le Portefeuille Client</label>
+            <select id="inv-client-select" class="form-control" onchange="onInvoiceClientSelect(this.value)" style="border-color: var(--accent-primary);">
+              <option value="">-- Choisir un client du portefeuille --</option>
+            </select>
+          </div>
+
           <div class="form-grid">
             <div class="form-group">
               <label>Nom ou Raison Sociale du Client *</label>
@@ -1098,7 +1218,107 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-secondary" onclick="closeModal('modal-invoice-detail')">Fermer</button>
+        <button type="button" class="btn-secondary" style="border-color: var(--accent-primary); color: var(--accent-primary); font-weight: 600;" onclick="downloadInvoicePDF(window.currentDetailInvoiceId)"><i class="fa-solid fa-file-pdf"></i> Télécharger PDF</button>
+        <button type="button" class="btn-success" style="background: #25D366; border-color: #25D366; font-weight: 600;" onclick="openWhatsAppModalFromDetail()"><i class="fa-brands fa-whatsapp"></i> Envoyer sur WhatsApp</button>
         <button type="button" class="btn-primary" onclick="printInvoice()"><i class="fa-solid fa-print"></i> Imprimer Document</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 6B: WhatsApp Invoice Sharing Modal -->
+  <div class="modal-backdrop" id="modal-whatsapp-share">
+    <div class="modal-card" style="max-width: 680px;">
+      <div class="modal-header" style="border-bottom: 2px solid #25D366;">
+        <h3 style="display: flex; align-items: center; gap: 0.5rem; color: #25D366;">
+          <i class="fa-brands fa-whatsapp" style="font-size: 1.5rem;"></i> Envoyer la Facture sur WhatsApp
+        </h3>
+        <button class="icon-btn" onclick="closeModal('modal-whatsapp-share')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Target Invoice Brief Card -->
+        <div id="wa-invoice-brief" style="background: var(--bg-tertiary); padding: 0.75rem 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; border-left: 4px solid #25D366; display: flex; justify-content: space-between; align-items: center;">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- PDF Attachment Option Card -->
+        <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.75rem 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <i class="fa-solid fa-file-pdf" style="font-size: 2rem; color: #ef4444;"></i>
+            <div>
+              <strong style="font-size: 0.88rem; color: var(--text-primary);">Document PDF Officiel de la Facture</strong>
+              <p style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 0.1rem;">
+                Envoi direct du fichier PDF via WhatsApp (Mobile) ou téléchargement rapide.
+              </p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.4rem;">
+            <button type="button" class="btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.78rem; border-color: var(--accent-primary); color: var(--accent-primary);" onclick="downloadInvoicePDFFromModal()">
+              <i class="fa-solid fa-download"></i> Télécharger PDF
+            </button>
+            <button type="button" class="btn-success" style="padding: 0.35rem 0.65rem; font-size: 0.78rem; background: linear-gradient(135deg, #10b981, #059669); font-weight: 700;" onclick="shareInvoicePDFWhatsApp()">
+              <i class="fa-solid fa-paperclip"></i> Partager Fichier PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- Phone Number Input & Country Code Selector -->
+        <div class="form-grid" style="grid-template-columns: 1.2fr 2fr; gap: 0.75rem;">
+          <div class="form-group">
+            <label style="font-size: 0.78rem;"><i class="fa-solid fa-globe"></i> Indicatif Pays</label>
+            <select id="wa-country-code" class="form-control" onchange="updateWhatsAppMessagePreview()">
+              <option value="221">🇸🇳 Sénégal (+221)</option>
+              <option value="225">🇨🇮 Côte d'Ivoire (+225)</option>
+              <option value="223">🇲🇱 Mali (+223)</option>
+              <option value="224">🇬🇳 Guinée (+224)</option>
+              <option value="226">🇧🇫 Burkina Faso (+226)</option>
+              <option value="228">🇹🇬 Togo (+228)</option>
+              <option value="229">🇧🇯 Bénin (+229)</option>
+              <option value="237">🇨🇲 Cameroun (+237)</option>
+              <option value="242">🇨🇬 Congo (+242)</option>
+              <option value="243">🇨🇩 RDC (+243)</option>
+              <option value="212">🇲🇦 Maroc (+212)</option>
+              <option value="33">🇫🇷 France (+33)</option>
+              <option value="1">🇺🇸 / 🇨🇦 USA/Canada (+1)</option>
+              <option value="AUTRE">Autre / Format complet (+...)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label style="font-size: 0.78rem;"><i class="fa-solid fa-phone"></i> Numéro WhatsApp du Client *</label>
+            <input type="text" id="wa-client-phone" class="form-control" placeholder="Ex: 77 123 45 67 ou +221771234567" oninput="updateWhatsAppMessagePreview()" required>
+          </div>
+        </div>
+
+        <!-- Options Toggles -->
+        <div style="display: flex; gap: 1.25rem; margin-bottom: 1rem; flex-wrap: wrap; background: var(--bg-card); padding: 0.6rem 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 0.4rem; cursor: pointer; text-transform: none; font-weight: 500;">
+            <input type="checkbox" id="wa-opt-items" checked onchange="updateWhatsAppMessagePreview()"> Inclure le détail des prestations / articles
+          </label>
+          <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 0.4rem; cursor: pointer; text-transform: none; font-weight: 500;">
+            <input type="checkbox" id="wa-opt-payment" checked onchange="updateWhatsAppMessagePreview()"> Inclure les modalités de paiement (RIB / Mobile Money)
+          </label>
+        </div>
+
+        <!-- WhatsApp Message Chat Bubble Preview -->
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <label style="font-size: 0.78rem; font-weight: 700; color: #25D366;">
+              <i class="fa-solid fa-comment-dots"></i> Aperçu du Message WhatsApp (Directement Éditable)
+            </label>
+            <span id="wa-formatted-num-display" style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;"></span>
+          </div>
+          <textarea id="wa-message-preview" class="form-control" rows="10" style="font-family: inherit; font-size: 0.85rem; line-height: 1.4; background: #075e54; color: #e9edef; border-color: #128c7e; border-radius: var(--radius-md); padding: 0.75rem;"></textarea>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('modal-whatsapp-share')">Annuler</button>
+        <button type="button" class="btn-secondary" style="border-color: var(--accent-primary); color: var(--accent-primary);" onclick="copyWhatsAppMessageToClipboard()">
+          <i class="fa-solid fa-copy"></i> Copier le texte
+        </button>
+        <button type="button" class="btn-success" style="background: #25D366; border-color: #25D366; font-weight: 700;" onclick="sendWhatsAppMessageFromModal()">
+          <i class="fa-brands fa-whatsapp"></i> Envoyer sur WhatsApp
+        </button>
       </div>
     </div>
   </div>
@@ -1236,11 +1456,110 @@
     </div>
   </div>
 
+  <!-- Modal 12: Add / Edit Client -->
+  <div class="modal-backdrop" id="modal-client">
+    <div class="modal-card" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3 id="client-modal-title">Nouveau Client - Portefeuille 2M GLOBAL SERVICES</h3>
+        <button class="icon-btn" onclick="closeModal('modal-client')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="client-form" onsubmit="handleClientFormSubmit(event)">
+        <div class="modal-body">
+          <input type="hidden" id="client-edit-id">
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Code Client *</label>
+              <input type="text" id="client-code" class="form-control" placeholder="Ex: CLI-001" required>
+            </div>
+            <div class="form-group">
+              <label>Type de Client *</label>
+              <select id="client-type" class="form-control" required>
+                <option value="COMPANY">🏢 Entreprise / Société (B2B)</option>
+                <option value="INDIVIDUAL">👤 Client Particulier</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Nom complet / Raison Sociale *</label>
+              <input type="text" id="client-name" class="form-control" placeholder="Ex: SARL DIOP & FRERES ou Adama Coulibaly" required>
+            </div>
+            <div class="form-group">
+              <label>Personne de Contact (Si entreprise)</label>
+              <input type="text" id="client-contact" class="form-control" placeholder="Ex: Ousmane Diop (Responsable Achats)">
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Téléphone / WhatsApp *</label>
+              <input type="text" id="client-phone" class="form-control" placeholder="Ex: +221 77 123 45 67" required>
+            </div>
+            <div class="form-group">
+              <label>Adresse E-mail</label>
+              <input type="email" id="client-email" class="form-control" placeholder="contact@entreprise.sn">
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>N° N.I.N.E.A / NIF / Tax ID</label>
+              <input type="text" id="client-taxid" class="form-control" placeholder="Ex: NINEA: 00987456 - RCCM: 2025.B.124">
+            </div>
+            <div class="form-group">
+              <label>Catégorie Commerciale</label>
+              <select id="client-category" class="form-control">
+                <option value="Client Régulier">Client Régulier</option>
+                <option value="VIP / Grand Compte">VIP / Grand Compte</option>
+                <option value="Grossiste / Revendeur">Grossiste / Revendeur</option>
+                <option value="Nouveau Client">Nouveau Client</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Adresse Physique & Ville</label>
+            <input type="text" id="client-address" class="form-control" placeholder="Ex: Avenue Lamine Gueye, Dakar">
+          </div>
+
+          <div class="form-group">
+            <label>Remarques / Modalités particulières</label>
+            <textarea id="client-notes" class="form-control" rows="2" placeholder="Ex: Conditions de paiement, préférences de livraison..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-client')">Annuler</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Enregistrer Client</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 13: Client Detail Profile & History Modal -->
+  <div class="modal-backdrop" id="modal-client-detail">
+    <div class="modal-card" style="max-width: 820px;">
+      <div class="modal-header">
+        <h3>Dossier & Historique du Client</h3>
+        <button class="icon-btn" onclick="closeModal('modal-client-detail')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="client-detail-content">
+        <!-- Dynamic Client Profile & Purchase History -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('modal-client-detail')">Fermer</button>
+      </div>
+    </div>
+  </div>
+
   <!-- JS Scripts -->
   <script src="js/store.js"></script>
   <script src="js/components/dashboard.js"></script>
   <script src="js/components/products.js"></script>
   <script src="js/components/invoices.js"></script>
+  <script src="js/components/clients.js"></script>
   <script src="js/components/purchase_orders.js"></script>
   <script src="js/components/movements.js"></script>
   <script src="js/components/alerts.js"></script>

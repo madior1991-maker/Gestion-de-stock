@@ -12,7 +12,8 @@ const STORAGE_KEYS = {
   PURCHASE_ORDERS: 'stockmanager_po_v1',
   SETTINGS: 'stockmanager_settings_v1',
   USER_ROLE: 'stockmanager_user_role_v1',
-  USERS: 'stockmanager_users_v1'
+  USERS: 'stockmanager_users_v1',
+  CLIENTS: 'stockmanager_clients_v1'
 };
 
 // Global FCFA Currency Formatter Helper
@@ -99,6 +100,7 @@ const DEFAULT_SETTINGS = {
   defaultMinStock: 5,
   showQrCode: true,
   allowNegativeStock: false,
+  waCountryCode: '221',
   invoiceFooterLine1: '2M GLOBAL SERVICES - N.I.N.E.A: 012457695 - SN.DKR.2025.A.35597 - 35529/2025/RCCM/RA',
   invoiceFooterLine2: 'Adresse: LIBERTE O1 VILLA N• 1336 - 📧 E-MAIL: 2mglobalservices11@gmail.COM - ☎️ Tél: 76-192-34-41'
 };
@@ -108,6 +110,51 @@ const INITIAL_USERS = [
   { id: 'usr-1', name: 'Administrateur Général', email: '2mglobalservices11@gmail.COM', role: 'ADMIN', active: true, permissions: { editValidatedInvoices: true, accessSettings: true, accessReports: true, manageStock: true } },
   { id: 'usr-2', name: 'Jean K. (Magasinier)', email: 'magasin@2mglobalservices.ci', role: 'MAGASINIER', active: true, permissions: { editValidatedInvoices: false, accessSettings: false, accessReports: false, manageStock: true } },
   { id: 'usr-3', name: 'Awa T. (Vendeuse)', email: 'ventes@2mglobalservices.ci', role: 'VENDEUR', active: true, permissions: { editValidatedInvoices: false, accessSettings: false, accessReports: false, manageStock: false } }
+];
+
+const INITIAL_CLIENTS = [
+  {
+    id: 'cli-1',
+    code: 'CLI-001',
+    name: 'SARL DIOP & FRERES',
+    type: 'COMPANY',
+    contactName: 'Ousmane Diop',
+    phone: '+221 77 123 45 67',
+    email: 'contact@diopfreres.sn',
+    address: 'Avenue Lamine Gueye, Dakar',
+    taxId: 'NINEA: 00987456 - RCCM: 2025.B.124',
+    category: 'VIP / Grand Compte',
+    notes: 'Règlement sous 15 jours par virement bancaire.',
+    createdAt: new Date(Date.now() - 45 * 86400000).toISOString()
+  },
+  {
+    id: 'cli-2',
+    code: 'CLI-002',
+    name: 'Adama Coulibaly',
+    type: 'INDIVIDUAL',
+    contactName: 'Adama Coulibaly',
+    phone: '+221 76 192 34 41',
+    email: 'adama.coulibaly@gmail.com',
+    address: 'Villa 1336, Liberté 6 Extension, Dakar',
+    taxId: '',
+    category: 'Client Régulier',
+    notes: 'Paye généralement par Wave ou Espèces.',
+    createdAt: new Date(Date.now() - 30 * 86400000).toISOString()
+  },
+  {
+    id: 'cli-3',
+    code: 'CLI-003',
+    name: 'HÔTEL BASSARI & SUITES',
+    type: 'COMPANY',
+    contactName: 'Aminata Ndiaye (Direction Finance)',
+    phone: '+221 33 821 40 40',
+    email: 'finance@hotelbassari.sn',
+    address: 'Boulevard de la République, Plateau, Dakar',
+    taxId: 'NINEA: 00456123 - RCCM: 2024.B.568',
+    category: 'Entreprise Hôtelière',
+    notes: 'Contrat annuel de maintenance informatique & fournitures.',
+    createdAt: new Date(Date.now() - 60 * 86400000).toISOString()
+  }
 ];
 
 // Seed Data for Demo Purpose
@@ -335,6 +382,9 @@ class DataStore {
     if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
       localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
     }
+    if (!localStorage.getItem(STORAGE_KEYS.CLIENTS)) {
+      localStorage.setItem(STORAGE_KEYS.CLIENTS, JSON.stringify(INITIAL_CLIENTS));
+    }
   }
 
   resetDemoData() {
@@ -347,6 +397,7 @@ class DataStore {
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
     localStorage.setItem(STORAGE_KEYS.USER_ROLE, 'ADMIN');
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
+    localStorage.setItem(STORAGE_KEYS.CLIENTS, JSON.stringify(INITIAL_CLIENTS));
   }
 
   // --- USER ROLE MANAGEMENT (RBAC) ---
@@ -854,6 +905,84 @@ class DataStore {
 
   getSuppliers() {
     return JSON.parse(localStorage.getItem(STORAGE_KEYS.SUPPLIERS) || '[]');
+  }
+
+  // --- CLIENT PORTFOLIO (CLIENTS / CRM) ---
+  getClients() {
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.CLIENTS) || '[]');
+  }
+
+  getClientById(id) {
+    return this.getClients().find(c => c.id === id);
+  }
+
+  saveClient(clientData) {
+    const clients = this.getClients();
+    if (clientData.id) {
+      const idx = clients.findIndex(c => c.id === clientData.id);
+      if (idx !== -1) {
+        clients[idx] = { ...clients[idx], ...clientData, updatedAt: new Date().toISOString() };
+      }
+      localStorage.setItem(STORAGE_KEYS.CLIENTS, JSON.stringify(clients));
+      return clients[idx];
+    } else {
+      const newClient = {
+        ...clientData,
+        id: 'cli-' + Date.now().toString(36),
+        code: clientData.code || `CLI-${String(clients.length + 1).padStart(3, '0')}`,
+        createdAt: new Date().toISOString()
+      };
+      clients.push(newClient);
+      localStorage.setItem(STORAGE_KEYS.CLIENTS, JSON.stringify(clients));
+      return newClient;
+    }
+  }
+
+  deleteClient(id) {
+    if (!this.isAdmin()) throw new Error('Seul l\'Administrateur Général peut supprimer un client du portefeuille.');
+    const clients = this.getClients().filter(c => c.id !== id);
+    localStorage.setItem(STORAGE_KEYS.CLIENTS, JSON.stringify(clients));
+  }
+
+  getClientInvoices(clientIdOrName) {
+    const invoices = this.getInvoices();
+    if (!clientIdOrName) return [];
+
+    const client = this.getClientById(clientIdOrName);
+    const searchName = client ? client.name.toLowerCase() : clientIdOrName.toLowerCase();
+
+    return invoices.filter(inv => {
+      if (inv.clientId && inv.clientId === clientIdOrName) return true;
+      if (inv.clientName && inv.clientName.toLowerCase().includes(searchName)) return true;
+      return false;
+    });
+  }
+
+  getClientMetrics(clientIdOrName) {
+    const clientInvoices = this.getClientInvoices(clientIdOrName);
+    let totalRevenue = 0;
+    let pendingAmount = 0;
+    let lastPurchaseDate = null;
+
+    clientInvoices.forEach(inv => {
+      if (inv.type === 'DEFINITIVE' || inv.type === 'SERVICE') {
+        if (inv.status === 'PAID') {
+          totalRevenue += (inv.totalAmount || 0);
+        } else if (inv.status === 'PENDING') {
+          pendingAmount += (inv.totalAmount || 0);
+        }
+      }
+      if (!lastPurchaseDate || new Date(inv.date) > new Date(lastPurchaseDate)) {
+        lastPurchaseDate = inv.date;
+      }
+    });
+
+    return {
+      totalInvoices: clientInvoices.length,
+      totalRevenue,
+      pendingAmount,
+      lastPurchaseDate
+    };
   }
 
   // --- METRICS ---
