@@ -26,9 +26,19 @@
         <img src="assets/logo.png" alt="2M GLOBAL SERVICES" class="auth-logo">
         <h2>2M GLOBAL SERVICES</h2>
         <p class="auth-subtitle">Gestion de Stock, Facturation & Portefeuille Clients</p>
-        <span class="auth-badge"><i class="fa-solid fa-shield-halved"></i> Espace Sécurisé avec Contrôle Admin</span>
+        
+        <!-- Auth Mode Switcher Pills -->
+        <div style="display: flex; background: var(--bg-tertiary); border-radius: 30px; padding: 4px; margin-top: 0.85rem; border: 1px solid var(--border-color);">
+          <button id="tab-auth-login" type="button" class="btn-secondary" style="flex: 1; border-radius: 20px; font-size: 0.78rem; font-weight: 700; background: var(--accent-primary); color: #fff; border: none; justify-content: center;" onclick="switchAuthMode('LOGIN')">
+            <i class="fa-solid fa-right-to-bracket"></i> Connexion
+          </button>
+          <button id="tab-auth-activate" type="button" class="btn-secondary" style="flex: 1; border-radius: 20px; font-size: 0.78rem; font-weight: 700; background: transparent; color: var(--text-secondary); border: none; justify-content: center;" onclick="switchAuthMode('ACTIVATE')">
+            <i class="fa-solid fa-key"></i> Activer / Mot de Passe
+          </button>
+        </div>
       </div>
 
+      <!-- FORM 1: LOGIN FORM -->
       <form id="auth-login-form" onsubmit="handleAuthLoginSubmit(event)">
         <div id="auth-error-alert" class="alert alert-danger" style="display: none; margin-bottom: 1rem; font-size: 0.85rem;"></div>
 
@@ -51,7 +61,7 @@
           <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer; color: var(--text-secondary);">
             <input type="checkbox" id="login-remember" checked> Se souvenir de moi
           </label>
-          <span style="color: var(--accent-primary); font-size: 0.78rem; font-weight: 600;"><i class="fa-solid fa-user-check"></i> Accès sous validation Admin</span>
+          <span style="color: var(--accent-primary); font-size: 0.78rem; font-weight: 600;"><i class="fa-solid fa-user-check"></i> Validation Admin</span>
         </div>
 
         <button type="submit" class="btn-primary" style="width: 100%; padding: 0.85rem; font-weight: 700; font-size: 0.95rem; justify-content: center; background: linear-gradient(135deg, #0284c7, #0369a1);">
@@ -59,8 +69,36 @@
         </button>
       </form>
 
+      <!-- FORM 2: ACCOUNT ACTIVATION & PASSWORD CREATION FORM -->
+      <form id="auth-activate-form" style="display: none;" onsubmit="handleAuthActivationSubmit(event)">
+        <div id="auth-activate-error" class="alert alert-danger" style="display: none; margin-bottom: 1rem; font-size: 0.85rem;"></div>
+
+        <div style="background: rgba(2, 132, 199, 0.1); border-left: 4px solid var(--accent-primary); padding: 0.75rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.8rem; color: var(--text-secondary);">
+          <i class="fa-solid fa-circle-info" style="color: var(--accent-primary);"></i> Saisissez votre adresse e-mail ou le jeton d'activation reçu par e-mail/WhatsApp, puis créez votre mot de passe personnel.
+        </div>
+
+        <div class="form-group">
+          <label><i class="fa-solid fa-envelope"></i> Email ou Code d'Activation *</label>
+          <input type="text" id="activate-token-input" class="form-control" placeholder="Ex: votre.email@2mglobal.sn ou act-xxxx" required>
+        </div>
+
+        <div class="form-group">
+          <label><i class="fa-solid fa-lock"></i> Créez votre Mot de passe Personel *</label>
+          <input type="password" id="activate-new-password" class="form-control" placeholder="Mot de passe confidentiel (min. 4 car.)" required minlength="4">
+        </div>
+
+        <div class="form-group">
+          <label><i class="fa-solid fa-shield-check"></i> Confirmez votre Mot de passe *</label>
+          <input type="password" id="activate-confirm-password" class="form-control" placeholder="Répétez votre mot de passe" required minlength="4">
+        </div>
+
+        <button type="submit" class="btn-success" style="width: 100%; padding: 0.85rem; font-weight: 700; font-size: 0.95rem; justify-content: center; background: linear-gradient(135deg, #10b981, #059669); border-color: #10b981; margin-top: 0.5rem;">
+          <i class="fa-solid fa-check-double"></i> Valider mon Accès & Se Connecter
+        </button>
+      </form>
+
       <!-- Quick Demo Accounts Shortcuts -->
-      <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+      <div id="auth-demo-shortcuts" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
         <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; text-align: center; margin-bottom: 0.65rem; font-weight: 700; letter-spacing: 0.05em;">
           Comptes de Démonstration (Connexion 1-Clic)
         </div>
@@ -76,10 +114,6 @@
           <button type="button" class="btn-secondary" style="font-size: 0.78rem; justify-content: space-between; padding: 0.45rem 0.75rem;" onclick="quickFillLogin('vendeur@2mglobal.sn', 'vendeur')">
             <span>💼 Vendeur Commercial (Ventes & Clients)</span>
             <strong style="color: var(--warning);">Connexion 1-Clic</strong>
-          </button>
-          <button type="button" class="btn-secondary" style="font-size: 0.78rem; justify-content: space-between; padding: 0.45rem 0.75rem; border-color: var(--danger);" onclick="quickFillLogin('mamadou.diallo@gmail.com', '123')">
-            <span style="color: var(--danger);">⛔ Compte Non-Autorisé (Test Blocage)</span>
-            <strong style="color: var(--danger);">Tester Refus</strong>
           </button>
         </div>
       </div>
@@ -1675,13 +1709,13 @@
           </div>
 
           <div class="form-group">
-            <label>Adresse Email / Identifiant de Connexion *</label>
+            <label>Adresse Email de l'Utilisateur *</label>
             <input type="email" id="user-new-email" class="form-control" placeholder="ousmane.sow@2mglobal.sn" required>
           </div>
 
           <div class="form-group">
-            <label>Mot de passe Initial *</label>
-            <input type="password" id="user-new-password" class="form-control" placeholder="••••••••" required>
+            <label>Téléphone / WhatsApp (Optionnel)</label>
+            <input type="text" id="user-new-phone" class="form-control" placeholder="+221 77 000 00 00">
           </div>
 
           <div class="form-group">
@@ -1693,21 +1727,62 @@
             </select>
           </div>
 
-          <div class="form-group" style="background: var(--bg-tertiary); padding: 0.75rem; border-radius: var(--radius-md); margin-top: 0.5rem;">
-            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-primary); text-transform: none; font-size: 0.85rem; margin-bottom: 0;">
-              <input type="checkbox" id="user-new-approved" checked style="width: 18px; height: 18px;">
-              <strong>Autoriser immédiatement l'accès à cet utilisateur</strong>
-            </label>
-            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem; margin-bottom: 0;">
-              Si cette case est décochée, l'utilisateur sera bloqué jusqu'à votre autorisation dans la Console Admin.
+          <div class="form-group" style="background: rgba(2, 132, 199, 0.1); border-left: 4px solid var(--accent-primary); padding: 0.75rem; border-radius: var(--radius-md); margin-top: 0.5rem;">
+            <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 0; line-height: 1.4;">
+              <i class="fa-solid fa-envelope-open-text" style="color: var(--accent-primary);"></i> <strong>Mode Invitation par E-mail & WhatsApp :</strong> L'utilisateur recevra une invitation avec son lien d'activation sécurisé et créera lui-même son mot de passe lors de sa première connexion.
             </p>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-secondary" onclick="closeModal('modal-user-create')">Annuler</button>
-          <button type="submit" class="btn-primary"><i class="fa-solid fa-user-plus"></i> Enregistrer le Compte</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-paper-plane"></i> Créer & Générer l'Invitation</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal 15: User Invitation & Activation Link Dispatch -->
+  <div class="modal-backdrop" id="modal-user-invitation">
+    <div class="modal-card" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-paper-plane" style="color: var(--accent-primary);"></i> Invitation & Lien d'Activation Générés</h3>
+        <button class="icon-btn" onclick="closeModal('modal-user-invitation')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-success" style="font-size: 0.85rem; margin-bottom: 1rem;">
+          <i class="fa-solid fa-circle-check"></i> <strong>Compte Utilisateur créé avec succès !</strong> L'e-mail d'invitation et le lien d'activation sont prêts.
+        </div>
+
+        <!-- Simulated Email Preview Card -->
+        <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.15rem; margin-bottom: 1rem;">
+          <div style="font-size: 0.78rem; color: var(--text-muted); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.75rem;">
+            <div><strong>À :</strong> <span id="invitation-user-email" style="color: var(--text-primary); font-weight: 600;">email@domain.com</span></div>
+            <div><strong>De :</strong> 2M GLOBAL SERVICES &lt;admin@2mglobal.sn&gt;</div>
+            <div><strong>Objet :</strong> Activation de votre compte utilisateur 2M GLOBAL SERVICES</div>
+          </div>
+          <div style="font-size: 0.85rem; color: var(--text-primary); line-height: 1.5;">
+            <p>Bonjour <strong id="invitation-user-name">Utilisateur</strong>,</p>
+            <p>Un compte utilisateur (Rôle : <span id="invitation-user-role" style="font-weight: 700; color: var(--accent-primary);">Vendeur</span>) a été créé pour vous sur la plateforme <strong>2M GLOBAL SERVICES</strong>.</p>
+            <p>Veuillez cliquer sur le lien ci-dessous pour définir votre mot de passe et valider vos accès sur l'application :</p>
+            
+            <div style="text-align: center; margin: 0.85rem 0;">
+              <input type="text" id="invitation-link-input" class="form-control" readonly style="text-align: center; font-family: monospace; font-size: 0.82rem; font-weight: 700; background: var(--bg-card); cursor: pointer;" onclick="this.select()">
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button type="button" class="btn-secondary" style="flex: 1; justify-content: center;" onclick="copyInvitationLinkToClipboard()">
+            <i class="fa-solid fa-copy"></i> Copier le Lien d'Activation
+          </button>
+          <button type="button" class="btn-success" style="flex: 1; justify-content: center; background: #25D366; border-color: #25D366; font-weight: 700;" onclick="sendInvitationWhatsApp()">
+            <i class="fa-brands fa-whatsapp"></i> Envoyer sur WhatsApp
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-primary" onclick="closeModal('modal-user-invitation')">Terminer & Fermer</button>
+      </div>
     </div>
   </div>
 

@@ -569,24 +569,59 @@ class DataStore {
     if (userData.id) {
       const idx = users.findIndex(u => u.id === userData.id);
       if (idx !== -1) users[idx] = { ...users[idx], ...userData };
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+      return users[idx];
     } else {
+      const activationToken = 'act-' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
       const isApproved = userData.isApproved !== undefined ? userData.isApproved : true;
       const newUser = {
         id: 'usr-' + Date.now().toString(36),
         name: userData.name,
         email: userData.email,
-        password: userData.password || '123456',
+        phone: userData.phone || '',
+        password: userData.password || '',
         role: userData.role || 'VENDEUR',
         active: isApproved,
         isApproved: isApproved,
-        status: isApproved ? 'ACTIVE' : 'PENDING_APPROVAL',
+        status: userData.password ? (isApproved ? 'ACTIVE' : 'PENDING_APPROVAL') : 'PENDING_PASSWORD_SET',
+        activationToken: activationToken,
         createdAt: new Date().toISOString(),
         permissions: userData.permissions || { editValidatedInvoices: userData.role === 'ADMIN', accessSettings: userData.role === 'ADMIN', accessReports: userData.role === 'ADMIN', manageStock: userData.role !== 'VENDEUR' }
       };
       users.push(newUser);
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+      return newUser;
     }
+  }
+
+  activateUserAccount(emailOrToken, newPassword) {
+    const users = this.getUsers();
+    const cleanId = (emailOrToken || '').trim().toLowerCase();
+
+    const user = users.find(u =>
+      (u.activationToken && u.activationToken.toLowerCase() === cleanId) ||
+      (u.email && u.email.toLowerCase() === cleanId) ||
+      (cleanId.length > 3 && u.id.toLowerCase() === cleanId)
+    );
+
+    if (!user) {
+      throw new Error('Lien d\'activation ou identifiant invalide. Veuillez vérifier le code d\'activation ou contacter l\'Administrateur.');
+    }
+
+    if (!newPassword || newPassword.trim().length < 4) {
+      throw new Error('Le mot de passe doit comporter au moins 4 caractères.');
+    }
+
+    user.password = newPassword.trim();
+    user.isApproved = true;
+    user.active = true;
+    user.status = 'ACTIVE';
+    user.activatedAt = new Date().toISOString();
+
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-    return users;
+    this.setCurrentUser(user);
+    this.setUserRole(user.role);
+    return user;
   }
 
   deleteUser(id) {

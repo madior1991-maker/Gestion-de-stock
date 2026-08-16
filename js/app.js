@@ -373,22 +373,151 @@ function openNewUserModal() {
   openModal('modal-user-create');
 }
 
+function switchAuthMode(mode) {
+  const loginForm = document.getElementById('auth-login-form');
+  const activateForm = document.getElementById('auth-activate-form');
+  const demoShortcuts = document.getElementById('auth-demo-shortcuts');
+
+  const loginTab = document.getElementById('tab-auth-login');
+  const activateTab = document.getElementById('tab-auth-activate');
+
+  if (mode === 'ACTIVATE') {
+    if (loginForm) loginForm.style.display = 'none';
+    if (activateForm) activateForm.style.display = 'block';
+    if (demoShortcuts) demoShortcuts.style.display = 'none';
+
+    if (loginTab) {
+      loginTab.style.background = 'transparent';
+      loginTab.style.color = 'var(--text-secondary)';
+    }
+    if (activateTab) {
+      activateTab.style.background = 'var(--accent-primary)';
+      activateTab.style.color = '#fff';
+    }
+  } else {
+    if (loginForm) loginForm.style.display = 'block';
+    if (activateForm) activateForm.style.display = 'none';
+    if (demoShortcuts) demoShortcuts.style.display = 'block';
+
+    if (loginTab) {
+      loginTab.style.background = 'var(--accent-primary)';
+      loginTab.style.color = '#fff';
+    }
+    if (activateTab) {
+      activateTab.style.background = 'transparent';
+      activateTab.style.color = 'var(--text-secondary)';
+    }
+  }
+}
+
+function handleAuthActivationSubmit(e) {
+  e.preventDefault();
+  const tokenInput = document.getElementById('activate-token-input');
+  const pwdInput = document.getElementById('activate-new-password');
+  const confirmPwdInput = document.getElementById('activate-confirm-password');
+  const errorAlert = document.getElementById('auth-activate-error');
+
+  if (errorAlert) errorAlert.style.display = 'none';
+
+  if (pwdInput.value !== confirmPwdInput.value) {
+    if (errorAlert) {
+      errorAlert.style.display = 'block';
+      errorAlert.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Les deux mots de passe ne correspondent pas.';
+    }
+    return;
+  }
+
+  try {
+    const user = window.store.activateUserAccount(tokenInput.value, pwdInput.value);
+    showToast(`Félicitations, ${user.name} ! Votre compte est activé et votre mot de passe a été enregistré.`, 'success', 6000);
+    checkAuthSession();
+    switchView('dashboard');
+  } catch (err) {
+    if (errorAlert) {
+      errorAlert.style.display = 'block';
+      errorAlert.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(err.message)}`;
+    }
+  }
+}
+
+let currentInvitationData = null;
+
 function handleUserCreateSubmit(e) {
   e.preventDefault();
   const name = document.getElementById('user-new-name').value.trim();
   const email = document.getElementById('user-new-email').value.trim();
-  const password = document.getElementById('user-new-password').value.trim();
+  const phone = document.getElementById('user-new-phone') ? document.getElementById('user-new-phone').value.trim() : '';
   const role = document.getElementById('user-new-role').value;
-  const isApproved = document.getElementById('user-new-approved').checked;
 
   try {
-    window.store.saveUser({ name, email, password, role, isApproved });
-    showToast(`Compte pour "${name}" créé avec succès !`, 'success');
+    const newUser = window.store.saveUser({ name, email, phone, role, isApproved: true });
+    
     closeModal('modal-user-create');
     if (window.renderAdminConsole) window.renderAdminConsole('users');
+
+    const baseUrl = window.location.origin + window.location.pathname;
+    const activationUrl = `${baseUrl}#activate-${newUser.activationToken}`;
+
+    currentInvitationData = {
+      name: newUser.name,
+      email: newUser.email,
+      phone: newUser.phone,
+      role: newUser.role,
+      token: newUser.activationToken,
+      url: activationUrl
+    };
+
+    const emailEl = document.getElementById('invitation-user-email');
+    const nameEl = document.getElementById('invitation-user-name');
+    const roleEl = document.getElementById('invitation-user-role');
+    const linkInput = document.getElementById('invitation-link-input');
+
+    if (emailEl) emailEl.textContent = newUser.email;
+    if (nameEl) nameEl.textContent = newUser.name;
+    if (roleEl) roleEl.textContent = newUser.role;
+    if (linkInput) linkInput.value = activationUrl;
+
+    openModal('modal-user-invitation');
+    showToast(`Compte créé pour ${newUser.name}. Invitation par e-mail générée !`, 'success');
   } catch (err) {
     showToast(err.message, 'danger');
   }
+}
+
+function copyInvitationLinkToClipboard() {
+  const linkInput = document.getElementById('invitation-link-input');
+  if (!linkInput || !linkInput.value) return;
+
+  navigator.clipboard.writeText(linkInput.value).then(() => {
+    showToast('Lien d\'activation copié dans le presse-papiers !', 'success');
+  }).catch(() => {
+    linkInput.select();
+    document.execCommand('copy');
+    showToast('Lien d\'activation copié !', 'success');
+  });
+}
+
+function sendInvitationWhatsApp() {
+  if (!currentInvitationData) return;
+
+  const rawPhone = currentInvitationData.phone ? currentInvitationData.phone.replace(/[^\d+]/g, '') : '';
+  const settings = window.store.getSettings();
+  const cleanPhone = window.cleanPhoneNumber ? window.cleanPhoneNumber(rawPhone, settings.waCountryCode || '221') : rawPhone;
+
+  let msg = `🎉 *INVITATION ACCÈS - 2M GLOBAL SERVICES*\n`;
+  msg += `-------------------------------------------\n`;
+  msg += `Bonjour *${currentInvitationData.name}*,\n\n`;
+  msg += `Un compte utilisateur (*${currentInvitationData.role}*) a été créé pour vous sur la plateforme *2M GLOBAL SERVICES*.\n\n`;
+  msg += `🔑 *ACTIVATION & CRÉATION DE MOT DE PASSE :*\n`;
+  msg += `Veuillez cliquer sur le lien ci-dessous pour choisir votre mot de passe et valider vos accès :\n`;
+  msg += `👉 ${currentInvitationData.url}\n\n`;
+  msg += `(Ou saisissez votre e-mail *${currentInvitationData.email}* dans l'onglet "Activer mon Compte" sur la page de connexion).\n\n`;
+  msg += `✨ Bienvenue dans l'équipe !`;
+
+  const encoded = encodeURIComponent(msg);
+  const url = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
+  window.open(url, '_blank');
+  showToast('Invitation d\'activation préparée sur WhatsApp !', 'success');
 }
 
 window.switchView = switchView;
@@ -406,3 +535,7 @@ window.quickFillLogin = quickFillLogin;
 window.togglePasswordVisibility = togglePasswordVisibility;
 window.openNewUserModal = openNewUserModal;
 window.handleUserCreateSubmit = handleUserCreateSubmit;
+window.switchAuthMode = switchAuthMode;
+window.handleAuthActivationSubmit = handleAuthActivationSubmit;
+window.copyInvitationLinkToClipboard = copyInvitationLinkToClipboard;
+window.sendInvitationWhatsApp = sendInvitationWhatsApp;
