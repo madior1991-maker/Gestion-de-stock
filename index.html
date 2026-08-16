@@ -19,74 +19,74 @@
 </head>
 <body>
 
-  <div class="app-container">
+  <!-- LOGIN & AUTHENTICATION SCREEN OVERLAY -->
+  <div id="view-login" class="auth-screen" style="display: none;">
+    <div class="auth-card">
+      <div class="auth-header">
+        <img src="assets/logo.png" alt="2M GLOBAL SERVICES" class="auth-logo">
+        <h2>2M GLOBAL SERVICES</h2>
+        <p class="auth-subtitle">Gestion de Stock, Facturation & Portefeuille Clients</p>
+        <span class="auth-badge"><i class="fa-solid fa-shield-halved"></i> Espace Sécurisé avec Contrôle Admin</span>
+      </div>
 
-    <!-- LOGIN & AUTHENTICATION SCREEN OVERLAY -->
-    <div id="view-login" class="auth-screen" style="display: flex;">
-      <div class="auth-card">
-        <div class="auth-header">
-          <img src="assets/logo.png" alt="2M GLOBAL SERVICES" class="auth-logo">
-          <h2>2M GLOBAL SERVICES</h2>
-          <p class="auth-subtitle">Gestion de Stock, Facturation & Portefeuille Clients</p>
-          <span class="auth-badge"><i class="fa-solid fa-shield-halved"></i> Espace Sécurisé avec Contrôle Admin</span>
+      <form id="auth-login-form" onsubmit="handleAuthLoginSubmit(event)">
+        <div id="auth-error-alert" class="alert alert-danger" style="display: none; margin-bottom: 1rem; font-size: 0.85rem;"></div>
+
+        <div class="form-group">
+          <label><i class="fa-solid fa-envelope"></i> Adresse Email / Identifiant *</label>
+          <input type="text" id="login-email" class="form-control" placeholder="admin@2mglobal.sn" required>
         </div>
 
-        <form id="auth-login-form" onsubmit="handleAuthLoginSubmit(event)">
-          <div id="auth-error-alert" class="alert alert-danger" style="display: none; margin-bottom: 1rem; font-size: 0.85rem;"></div>
-
-          <div class="form-group">
-            <label><i class="fa-solid fa-envelope"></i> Adresse Email / Identifiant *</label>
-            <input type="text" id="login-email" class="form-control" placeholder="admin@2mglobal.sn" required>
+        <div class="form-group">
+          <label><i class="fa-solid fa-key"></i> Mot de passe *</label>
+          <div style="position: relative;">
+            <input type="password" id="login-password" class="form-control" placeholder="••••••••" required style="padding-right: 40px;">
+            <button type="button" class="icon-btn" style="position: absolute; right: 6px; top: 6px; background: transparent; border: none;" onclick="togglePasswordVisibility('login-password')">
+              <i class="fa-solid fa-eye" id="toggle-pwd-icon"></i>
+            </button>
           </div>
+        </div>
 
-          <div class="form-group">
-            <label><i class="fa-solid fa-key"></i> Mot de passe *</label>
-            <div style="position: relative;">
-              <input type="password" id="login-password" class="form-control" placeholder="••••••••" required style="padding-right: 40px;">
-              <button type="button" class="icon-btn" style="position: absolute; right: 6px; top: 6px; background: transparent; border: none;" onclick="togglePasswordVisibility('login-password')">
-                <i class="fa-solid fa-eye" id="toggle-pwd-icon"></i>
-              </button>
-            </div>
-          </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; font-size: 0.82rem;">
+          <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer; color: var(--text-secondary);">
+            <input type="checkbox" id="login-remember" checked> Se souvenir de moi
+          </label>
+          <span style="color: var(--accent-primary); font-size: 0.78rem; font-weight: 600;"><i class="fa-solid fa-user-check"></i> Accès sous validation Admin</span>
+        </div>
 
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; font-size: 0.82rem;">
-            <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer; color: var(--text-secondary);">
-              <input type="checkbox" id="login-remember" checked> Se souvenir de moi
-            </label>
-            <span style="color: var(--accent-primary); font-size: 0.78rem; font-weight: 600;"><i class="fa-solid fa-user-check"></i> Accès sous validation Admin</span>
-          </div>
+        <button type="submit" class="btn-primary" style="width: 100%; padding: 0.85rem; font-weight: 700; font-size: 0.95rem; justify-content: center; background: linear-gradient(135deg, #0284c7, #0369a1);">
+          <i class="fa-solid fa-right-to-bracket"></i> Se Connecter
+        </button>
+      </form>
 
-          <button type="submit" class="btn-primary" style="width: 100%; padding: 0.85rem; font-weight: 700; font-size: 0.95rem; justify-content: center; background: linear-gradient(135deg, #0284c7, #0369a1);">
-            <i class="fa-solid fa-right-to-bracket"></i> Se Connecter
+      <!-- Quick Demo Accounts Shortcuts -->
+      <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+        <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; text-align: center; margin-bottom: 0.65rem; font-weight: 700; letter-spacing: 0.05em;">
+          Comptes de Démonstration (Connexion 1-Clic)
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <button type="button" class="btn-secondary" style="font-size: 0.78rem; justify-content: space-between; padding: 0.45rem 0.75rem;" onclick="quickFillLogin('admin@2mglobal.sn', 'admin')">
+            <span>👑 Administrateur (Madior Niang)</span>
+            <strong style="color: var(--accent-primary);">Connexion 1-Clic</strong>
           </button>
-        </form>
-
-        <!-- Quick Demo Accounts Shortcuts -->
-        <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-          <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; text-align: center; margin-bottom: 0.65rem; font-weight: 700; letter-spacing: 0.05em;">
-            Comptes de Démonstration (Connexion 1-Clic)
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-            <button type="button" class="btn-secondary" style="font-size: 0.78rem; justify-content: space-between; padding: 0.45rem 0.75rem;" onclick="quickFillLogin('admin@2mglobal.sn', 'admin')">
-              <span>👑 Administrateur (Madior Niang)</span>
-              <strong style="color: var(--accent-primary);">Connexion 1-Clic</strong>
-            </button>
-            <button type="button" class="btn-secondary" style="font-size: 0.78rem; justify-content: space-between; padding: 0.45rem 0.75rem;" onclick="quickFillLogin('magasinier@2mglobal.sn', 'magasinier')">
-              <span>📦 Magasinier (Stock & Entrées)</span>
-              <strong style="color: var(--success);">Connexion 1-Clic</strong>
-            </button>
-            <button type="button" class="btn-secondary" style="font-size: 0.78rem; justify-content: space-between; padding: 0.45rem 0.75rem;" onclick="quickFillLogin('vendeur@2mglobal.sn', 'vendeur')">
-              <span>💼 Vendeur Commercial (Ventes & Clients)</span>
-              <strong style="color: var(--warning);">Connexion 1-Clic</strong>
-            </button>
-            <button type="button" class="btn-secondary" style="font-size: 0.78rem; justify-content: space-between; padding: 0.45rem 0.75rem; border-color: var(--danger);" onclick="quickFillLogin('mamadou.diallo@gmail.com', '123')">
-              <span style="color: var(--danger);">⛔ Compte Non-Autorisé (Test Blocage)</span>
-              <strong style="color: var(--danger);">Tester Refus</strong>
-            </button>
-          </div>
+          <button type="button" class="btn-secondary" style="font-size: 0.78rem; justify-content: space-between; padding: 0.45rem 0.75rem;" onclick="quickFillLogin('magasinier@2mglobal.sn', 'magasinier')">
+            <span>📦 Magasinier (Stock & Entrées)</span>
+            <strong style="color: var(--success);">Connexion 1-Clic</strong>
+          </button>
+          <button type="button" class="btn-secondary" style="font-size: 0.78rem; justify-content: space-between; padding: 0.45rem 0.75rem;" onclick="quickFillLogin('vendeur@2mglobal.sn', 'vendeur')">
+            <span>💼 Vendeur Commercial (Ventes & Clients)</span>
+            <strong style="color: var(--warning);">Connexion 1-Clic</strong>
+          </button>
+          <button type="button" class="btn-secondary" style="font-size: 0.78rem; justify-content: space-between; padding: 0.45rem 0.75rem; border-color: var(--danger);" onclick="quickFillLogin('mamadou.diallo@gmail.com', '123')">
+            <span style="color: var(--danger);">⛔ Compte Non-Autorisé (Test Blocage)</span>
+            <strong style="color: var(--danger);">Tester Refus</strong>
+          </button>
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="app-container">
 
     <!-- Mobile Navigation Overlay Backdrop -->
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileSidebar(false)"></div>

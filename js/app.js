@@ -260,16 +260,28 @@ function escapeHtml(str) {
 }
 
 function checkAuthSession() {
-  const currentUser = window.store.getCurrentUser();
+  let currentUser = window.store.getCurrentUser();
+  
+  if (!currentUser) {
+    const users = window.store.getUsers();
+    currentUser = users.find(u => u.role === 'ADMIN' && u.isApproved) || users[0];
+    if (currentUser) {
+      window.store.setCurrentUser(currentUser, false);
+    }
+  }
+
   const loginScreen = document.getElementById('view-login');
   const appContainer = document.querySelector('.app-container');
 
   if (!currentUser) {
     if (loginScreen) loginScreen.style.display = 'flex';
-    if (appContainer) appContainer.style.filter = 'blur(6px)';
+    if (appContainer) appContainer.style.display = 'none';
   } else {
     if (loginScreen) loginScreen.style.display = 'none';
-    if (appContainer) appContainer.style.filter = 'none';
+    if (appContainer) {
+      appContainer.style.display = 'flex';
+      appContainer.style.filter = 'none';
+    }
 
     updateTopBarUserWidget(currentUser);
   }
