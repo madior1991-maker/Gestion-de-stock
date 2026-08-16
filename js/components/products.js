@@ -55,6 +55,11 @@ function renderProducts(filteredProducts = null) {
         <td>
           <strong style="color: var(--text-primary);">${window.formatFCFA(p.sellPrice)}</strong>
           ${p.buyPrice ? `<span style="display: block; font-size: 0.75rem; color: var(--text-muted);">Achat: ${window.formatFCFA(p.buyPrice)}</span>` : ''}
+          ${(() => {
+            const margin = (p.sellPrice || 0) - (p.buyPrice || 0);
+            const percent = p.buyPrice > 0 ? Math.round((margin / p.buyPrice) * 100) : 0;
+            return margin > 0 ? `<span class="badge badge-success" style="font-size:0.68rem; padding:0.08rem 0.35rem; margin-top:0.25rem; display:inline-block;" title="Marge brute unitaire">+${window.formatFCFA(margin)} (${percent}%)</span>` : '';
+          })()}
         </td>
         <td>
           <span style="font-size: 0.85rem; color: var(--text-secondary);"><i class="fa-solid fa-location-dot" style="font-size: 0.75rem;"></i> ${escapeHtml(p.location || 'N/A')}</span>

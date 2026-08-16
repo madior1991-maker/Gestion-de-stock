@@ -1010,15 +1010,31 @@ class DataStore {
       .filter(i => (i.type === 'DEFINITIVE' || i.type === 'SERVICE' || !i.type) && i.status === 'PAID')
       .reduce((acc, i) => acc + (i.totalAmount || 0), 0);
 
+    const totalPotentialProfit = Math.max(totalValuationSell - totalValuationBuy, 0);
+
     return {
       totalProducts: products.length,
       totalValuationBuy,
       totalValuationSell,
+      totalPotentialProfit,
       totalSalesAmount,
       lowStockCount,
       outOfStockCount,
       totalAlerts: lowStockCount + outOfStockCount
     };
+  }
+
+  markInvoiceAsPaid(invoiceId, paymentMethod = 'Virement bancaire') {
+    const invoices = this.getInvoices();
+    const inv = invoices.find(i => i.id === invoiceId);
+    if (!inv) throw new Error('Facture introuvable.');
+
+    inv.status = 'PAID';
+    if (paymentMethod) inv.paymentMethod = paymentMethod;
+    inv.paidAt = new Date().toISOString();
+
+    localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(invoices));
+    return inv;
   }
 
   getLowStockProducts() {

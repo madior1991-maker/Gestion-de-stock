@@ -13,10 +13,12 @@ function renderDashboard() {
   const kpiTotalItems = document.getElementById('kpi-total-items');
   const kpiAlertsCount = document.getElementById('kpi-alerts-count');
   const kpiMovementsMonth = document.getElementById('kpi-movements-month');
+  const kpiPotentialProfit = document.getElementById('kpi-potential-profit');
 
   if (kpiValuation) kpiValuation.textContent = window.formatFCFA(metrics.totalValuationBuy);
   if (kpiTotalItems) kpiTotalItems.textContent = metrics.totalProducts;
   if (kpiAlertsCount) kpiAlertsCount.textContent = metrics.totalAlerts;
+  if (kpiPotentialProfit) kpiPotentialProfit.textContent = window.formatFCFA(metrics.totalPotentialProfit || 0);
 
   const movements = window.store.getMovements();
   if (kpiMovementsMonth) kpiMovementsMonth.textContent = movements.length;

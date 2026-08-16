@@ -127,3 +127,43 @@ function resetDemoDataWithConfirm() {
     setTimeout(() => location.reload(), 800);
   }
 }
+
+function exportClientsCSV() {
+  const clients = window.store.getClients();
+  if (clients.length === 0) {
+    showToast('Aucun client à exporter.', 'warning');
+    return;
+  }
+
+  const headers = ['Code_Client', 'Nom_Raison_Sociale', 'Type', 'Contact', 'Telephone', 'Email', 'Adresse', 'NINEA_TaxID', 'Categorie', 'Notes'];
+  const rows = clients.map(c => [
+    `"${c.code || ''}"`,
+    `"${(c.name || '').replace(/"/g, '""')}"`,
+    `"${c.type || 'COMPANY'}"`,
+    `"${(c.contactName || '').replace(/"/g, '""')}"`,
+    `"${(c.phone || '').replace(/"/g, '""')}"`,
+    `"${(c.email || '').replace(/"/g, '""')}"`,
+    `"${(c.address || '').replace(/"/g, '""')}"`,
+    `"${(c.taxId || '').replace(/"/g, '""')}"`,
+    `"${(c.category || '').replace(/"/g, '""')}"`,
+    `"${(c.notes || '').replace(/"/g, '""')}"`
+  ]);
+
+  const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(';'), ...rows.map(e => e.join(';'))].join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `portefeuille_clients_${new Date().toISOString().split('T')[0]}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  showToast('Exportation du portefeuille clients au format CSV réussie !', 'success');
+}
+
+window.exportProductsCSV = exportProductsCSV;
+window.exportMovementsCSV = exportMovementsCSV;
+window.exportFullBackupJSON = exportFullBackupJSON;
+window.importBackupJSON = importBackupJSON;
+window.resetDemoDataWithConfirm = resetDemoDataWithConfirm;
+window.exportClientsCSV = exportClientsCSV;

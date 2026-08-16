@@ -120,6 +120,14 @@ function renderInvoices() {
                 <i class="fa-solid fa-arrow-right-arrow-left"></i> Convertir
               </button>
             ` : ''}
+            ${!isProforma && inv.status === 'PENDING' ? `
+              <button class="btn-success" style="padding: 0.28rem 0.55rem; font-size: 0.76rem;" onclick="quickMarkInvoicePaid('${inv.id}')" title="Marquer cette facture comme payée">
+                <i class="fa-solid fa-circle-check"></i> Régler
+              </button>
+              <button class="btn-warning" style="padding: 0.28rem 0.55rem; font-size: 0.76rem; background: linear-gradient(135deg, #f59e0b, #d97706); color:#fff;" onclick="sendWhatsAppReminder('${inv.id}')" title="Envoyer une relance d'impayé sur WhatsApp">
+                <i class="fa-solid fa-bell"></i> Relancer
+              </button>
+            ` : ''}
             ${editBtnHtml}
             <button class="btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.78rem;" onclick="viewInvoiceDetail('${inv.id}')">
               <i class="fa-solid fa-print"></i> Aperçu
@@ -1205,6 +1213,117 @@ function onInvoiceClientSelect(clientId) {
   if (taxInput) taxInput.value = client.taxId || '';
 }
 
+function quickMarkInvoicePaid(invoiceId) {
+  const inv = window.store.getInvoiceById(invoiceId);
+  if (!inv) return;
+
+  if (confirm(`Marquer la Facture #${inv.number} (Client: ${inv.clientName}) comme PAYÉE ?`)) {
+    try {
+      window.store.markInvoiceAsPaid(invoiceId);
+      showToast(`Facture #${inv.number} marquée comme PAYÉE !`, 'success');
+      renderInvoices();
+      if (window.renderDashboard) window.renderDashboard();
+      if (window.renderClients) window.renderClients();
+    } catch (err) {
+      showToast(err.message, 'danger');
+    }
+  }
+}
+
+function sendWhatsAppReminder(invoiceId) {
+  const inv = window.store.getInvoiceById(invoiceId);
+  if (!inv) return;
+
+  const settings = window.store.getSettings();
+  const companyName = settings.companyName || '2M GLOBAL SERVICES';
+  const rawPhone = inv.clientPhone ? inv.clientPhone.replace(/[^\d+]/g, '') : '';
+  const cleanPhone = cleanPhoneNumber(rawPhone, settings.waCountryCode || '221');
+
+  const formattedDate = new Date(inv.date).toLocaleDateString('fr-FR');
+  const formattedDue = inv.dueDate ? new Date(inv.dueDate).toLocaleDateString('fr-FR') : 'À réception';
+
+  let msg = `🔔 *RAPPEL DE RÈGLEMENT - ${companyName.toUpperCase()}*\n`;
+  msg += `-------------------------------------------\n`;
+  msg += `Bonjour *${inv.clientName}*,\n\n`;
+  msg += `Nous vous rappelons gentiment que la *Facture N° ${inv.number}* émise le ${formattedDate} (Échéance : ${formattedDue}) d'un montant de *${window.formatFCFA(inv.totalAmount)}* est en attente de règlement.\n\n`;
+  msg += `💳 *MODALITÉS DE RÈGLEMENT :*\n`;
+  msg += `• *Virement bancaire / Chèque :* CBAO (IBAN: SN08 SN012 012120 35207043601 08)\n`;
+  msg += `• *Wave / Orange Money :* 📲 +221 77 171 51 29 / +221 76 192 34 41\n\n`;
+  msg += `Si votre règlement a déjà été effectué, merci de ne pas tenir compte de ce rappel.\n\n`;
+  msg += `✨ *Merci pour votre confiance !*\n`;
+  msg += `📞 Contact : ${settings.companyPhone || '76-192-34-41'}`;
+
+  const encoded = encodeURIComponent(msg);
+  const url = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
+  window.open(url, '_blank');
+  showToast(`Relance WhatsApp d'impayé préparée pour la Facture #${inv.number}`, 'success');
+}
+
+function printPOSReceipt(invoiceId) {
+  const invId = invoiceId || window.currentDetailInvoiceId;
+  const inv = window.store.getInvoiceById(invId);
+  if (!inv) return;
+
+  const settings = window.store.getSettings();
+  const formattedDate = new Date(inv.date).toLocaleDateString('fr-FR', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+
+  const win = window.open('', '_blank', 'width=380,height=600');
+  win.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Ticket POS #${inv.number}</title>
+      <style>
+        body { font-family: monospace; font-size: 11px; width: 270px; margin: 0 auto; padding: 8px; color: #000; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .bold { font-weight: bold; }
+        .divider { border-top: 1px dashed #000; margin: 6px 0; }
+        table { width: 100%; border-collapse: collapse; font-size: 10px; }
+        td, th { padding: 2px 0; }
+      </style>
+    </head>
+    <body onload="window.print(); setTimeout(() => window.close(), 500);">
+      <div class="text-center bold" style="font-size: 13px;">${settings.companyName || '2M GLOBAL SERVICES'}</div>
+      <div class="text-center" style="font-size: 9px;">${settings.companyAddress || 'Dakar, Sénégal'}</div>
+      <div class="text-center" style="font-size: 9px;">Tél: ${settings.companyPhone || '76-192-34-41'}</div>
+      <div class="divider"></div>
+      <div><strong>TICKET N° :</strong> ${inv.number}</div>
+      <div><strong>Date :</strong> ${formattedDate}</div>
+      <div><strong>Client :</strong> ${inv.clientName}</div>
+      <div class="divider"></div>
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left;">Article</th>
+            <th style="text-align:center;">Qté</th>
+            <th class="text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${inv.items.map(i => `
+            <tr>
+              <td>${i.productName}</td>
+              <td style="text-align:center;">${i.quantity}</td>
+              <td class="text-right">${window.formatFCFA(i.total)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div class="divider"></div>
+      <div class="bold text-right" style="font-size: 12px;">TOTAL TTC : ${window.formatFCFA(inv.totalAmount)}</div>
+      <div class="text-right" style="font-size: 9px;">Mode: ${inv.paymentMethod || 'Espèces'}</div>
+      <div class="divider"></div>
+      <div class="text-center" style="margin-top: 6px;">Merci pour votre confiance !</div>
+      <div class="text-center" style="font-size: 8px; margin-top: 4px;">*** Conservez ce ticket ***</div>
+    </body>
+    </html>
+  `);
+  win.document.close();
+}
+
 window.filterInvoiceList = filterInvoiceList;
 window.onPaymentMethodChange = onPaymentMethodChange;
 window.openWhatsAppModal = openWhatsAppModal;
@@ -1217,3 +1336,6 @@ window.downloadInvoicePDFFromModal = downloadInvoicePDFFromModal;
 window.shareInvoicePDFWhatsApp = shareInvoicePDFWhatsApp;
 window.populateInvoiceClientDropdown = populateInvoiceClientDropdown;
 window.onInvoiceClientSelect = onInvoiceClientSelect;
+window.quickMarkInvoicePaid = quickMarkInvoicePaid;
+window.sendWhatsAppReminder = sendWhatsAppReminder;
+window.printPOSReceipt = printPOSReceipt;
