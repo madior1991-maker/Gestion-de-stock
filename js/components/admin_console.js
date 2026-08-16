@@ -42,6 +42,7 @@ function renderAdminConsole(tab = activeAdminTab) {
   else if (activeAdminTab === 'products') renderAdminProductsTable();
   else if (activeAdminTab === 'movements') renderAdminMovementsTable();
   else if (activeAdminTab === 'categories') renderAdminCategoriesTable();
+  else if (activeAdminTab === 'users') renderAdminUsersTable();
 }
 
 // 1. ADMIN TAB: INVOICES (FACTURES PROFORMA & DÉFINITIVES)
@@ -474,9 +475,114 @@ function adminDeleteCategory(id) {
   }
 }
 
+function renderAdminUsersTable() {
+  const container = document.getElementById('admin-tab-content');
+  if (!container) return;
+
+  const users = window.store.getUsers();
+
+  const rows = users.map(u => {
+    const isApproved = u.isApproved && u.status !== 'SUSPENDED';
+    const statusBadge = isApproved ?
+      '<span class="badge badge-success"><i class="fa-solid fa-user-check"></i> Accès Autorisé</span>' :
+      '<span class="badge badge-danger"><i class="fa-solid fa-user-lock"></i> Accès Bloqué / En Attente</span>';
+
+    const roleBadgeMap = {
+      'ADMIN': '<span class="badge badge-primary">👑 Administrateur Général</span>',
+      'MAGASINIER': '<span class="badge badge-info">📦 Magasinier</span>',
+      'VENDEUR': '<span class="badge badge-warning">💼 Vendeur Commercial</span>'
+    };
+
+    const actionBtn = isApproved ? `
+      <button class="btn-secondary" style="padding: 0.28rem 0.6rem; font-size: 0.78rem; border-color: var(--danger); color: var(--danger);" onclick="toggleUserApprovalWithConfirm('${u.id}')" title="Suspendre l'accès de cet utilisateur">
+        <i class="fa-solid fa-user-minus"></i> Suspendre Accès
+      </button>
+    ` : `
+      <button class="btn-success" style="padding: 0.28rem 0.6rem; font-size: 0.78rem;" onclick="toggleUserApprovalWithConfirm('${u.id}')" title="Autoriser l'accès de cet utilisateur">
+        <i class="fa-solid fa-user-check"></i> Autoriser l'Accès
+      </button>
+    `;
+
+    return `
+      <tr>
+        <td><strong style="color: var(--text-primary);">${escapeHtml(u.name)}</strong></td>
+        <td><span style="font-family: monospace; font-size: 0.85rem;">${escapeHtml(u.email)}</span></td>
+        <td>${roleBadgeMap[u.role] || u.role}</td>
+        <td>${statusBadge}</td>
+        <td>
+          <div style="display: flex; gap: 0.35rem;">
+            ${actionBtn}
+            ${u.role !== 'ADMIN' ? `
+              <button class="btn-secondary" style="padding: 0.28rem 0.6rem; font-size: 0.78rem; color: var(--danger); border-color: var(--danger);" onclick="adminDeleteUserWithConfirm('${u.id}')" title="Supprimer ce compte utilisateur">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            ` : ''}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="card" style="padding: 0;">
+      <div class="card-header" style="padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+          <h3 class="card-title"><i class="fa-solid fa-users-gear" style="color: var(--accent-primary);"></i> Administration & Autorisation des Comptes</h3>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">L'Administrateur Général valide et autorise chaque utilisateur avant qu'il ne puisse se connecter.</p>
+        </div>
+        <button class="btn-primary" onclick="openNewUserModal()">
+          <i class="fa-solid fa-user-plus"></i> Créer un Compte Utilisateur
+        </button>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nom & Prénom</th>
+              <th>Adresse Email / Identifiant</th>
+              <th>Rôle</th>
+              <th>Statut d'Autorisation</th>
+              <th>Actions Administrateur</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function toggleUserApprovalWithConfirm(userId) {
+  if (!window.store.isAdmin()) return;
+  try {
+    const user = window.store.toggleUserApproval(userId);
+    const stateText = user.isApproved ? 'AUTORISÉ' : 'SUSPENDU';
+    showToast(`Accès pour "${user.name}" désormais ${stateText}.`, user.isApproved ? 'success' : 'warning');
+    renderAdminConsole('users');
+  } catch (err) {
+    showToast(err.message, 'danger');
+  }
+}
+
+function adminDeleteUserWithConfirm(userId) {
+  if (!window.store.isAdmin()) return;
+  if (confirm('Supprimer définitivement ce compte utilisateur ?')) {
+    try {
+      window.store.deleteUser(userId);
+      showToast('Compte utilisateur supprimé.', 'info');
+      renderAdminConsole('users');
+    } catch (err) {
+      showToast(err.message, 'danger');
+    }
+  }
+}
+
 window.renderAdminConsole = renderAdminConsole;
 window.adminDeleteInvoice = adminDeleteInvoice;
 window.adminDeletePO = adminDeletePO;
 window.adminDeleteProduct = adminDeleteProduct;
 window.adminDeleteMovement = adminDeleteMovement;
 window.adminDeleteCategory = adminDeleteCategory;
+window.renderAdminUsersTable = renderAdminUsersTable;
+window.toggleUserApprovalWithConfirm = toggleUserApprovalWithConfirm;
+window.adminDeleteUserWithConfirm = adminDeleteUserWithConfirm;

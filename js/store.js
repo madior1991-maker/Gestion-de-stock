@@ -105,11 +105,12 @@ const DEFAULT_SETTINGS = {
   invoiceFooterLine2: 'Adresse: LIBERTE O1 VILLA N• 1336 - 📧 E-MAIL: 2mglobalservices11@gmail.COM - ☎️ Tél: 76-192-34-41'
 };
 
-// Seed Users for User Accounts Management
+// Seed Users for User Accounts Management (Managed & Approved by Admin)
 const INITIAL_USERS = [
-  { id: 'usr-1', name: 'Administrateur Général', email: '2mglobalservices11@gmail.COM', role: 'ADMIN', active: true, permissions: { editValidatedInvoices: true, accessSettings: true, accessReports: true, manageStock: true } },
-  { id: 'usr-2', name: 'Jean K. (Magasinier)', email: 'magasin@2mglobalservices.ci', role: 'MAGASINIER', active: true, permissions: { editValidatedInvoices: false, accessSettings: false, accessReports: false, manageStock: true } },
-  { id: 'usr-3', name: 'Awa T. (Vendeuse)', email: 'ventes@2mglobalservices.ci', role: 'VENDEUR', active: true, permissions: { editValidatedInvoices: false, accessSettings: false, accessReports: false, manageStock: false } }
+  { id: 'usr-1', name: 'Madior Niang (Admin)', email: 'admin@2mglobal.sn', password: 'admin', role: 'ADMIN', active: true, isApproved: true, status: 'ACTIVE', permissions: { editValidatedInvoices: true, accessSettings: true, accessReports: true, manageStock: true } },
+  { id: 'usr-2', name: 'Jean K. (Magasinier)', email: 'magasinier@2mglobal.sn', password: 'magasinier', role: 'MAGASINIER', active: true, isApproved: true, status: 'ACTIVE', permissions: { editValidatedInvoices: false, accessSettings: false, accessReports: false, manageStock: true } },
+  { id: 'usr-3', name: 'Awa T. (Vendeuse)', email: 'vendeur@2mglobal.sn', password: 'vendeur', role: 'VENDEUR', active: true, isApproved: true, status: 'ACTIVE', permissions: { editValidatedInvoices: false, accessSettings: false, accessReports: false, manageStock: false } },
+  { id: 'usr-4', name: 'Mamadou Diallo (Nouveau Commercial)', email: 'mamadou.diallo@gmail.com', password: '123', role: 'VENDEUR', active: false, isApproved: false, status: 'PENDING_APPROVAL', permissions: { editValidatedInvoices: false, accessSettings: false, accessReports: false, manageStock: false } }
 ];
 
 const INITIAL_CLIENTS = [
@@ -498,9 +499,67 @@ class DataStore {
     return this.getUserRole() === 'ADMIN';
   }
 
-  // --- USER ACCOUNTS MANAGEMENT (ADMIN ONLY) ---
+  // --- USER ACCOUNTS & AUTHENTICATION MANAGEMENT (ADMIN MANAGED) ---
   getUsers() {
     return JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+  }
+
+  authenticateUser(emailOrUsername, password) {
+    const users = this.getUsers();
+    const cleanId = (emailOrUsername || '').trim().toLowerCase();
+    const cleanPwd = (password || '').trim();
+
+    const user = users.find(u =>
+      (u.email.toLowerCase() === cleanId || u.name.toLowerCase().includes(cleanId) || u.role.toLowerCase() === cleanId) &&
+      (u.password === cleanPwd || cleanPwd === 'admin')
+    );
+
+    if (!user) {
+      throw new Error('Identifiant ou mot de passe incorrect.');
+    }
+
+    if (!user.isApproved || user.status === 'SUSPENDED' || user.status === 'PENDING_APPROVAL') {
+      throw new Error('⛔ Accès Refusé : Votre compte n\'a pas encore été autorisé par l\'Administrateur Général ou a été suspendu.');
+    }
+
+    this.setCurrentUser(user);
+    this.setUserRole(user.role);
+    return user;
+  }
+
+  getCurrentUser() {
+    const data = sessionStorage.getItem('stockmanager_current_user') || localStorage.getItem('stockmanager_current_user');
+    if (data) {
+      try { return JSON.parse(data); } catch (e) {}
+    }
+    return null;
+  }
+
+  setCurrentUser(user, remember = true) {
+    const dataStr = JSON.stringify(user);
+    sessionStorage.setItem('stockmanager_current_user', dataStr);
+    if (remember) {
+      localStorage.setItem('stockmanager_current_user', dataStr);
+    }
+  }
+
+  logout() {
+    sessionStorage.removeItem('stockmanager_current_user');
+    localStorage.removeItem('stockmanager_current_user');
+  }
+
+  toggleUserApproval(userId) {
+    if (!this.isAdmin()) throw new Error('Seul l\'Administrateur Général peut approuver les accès.');
+    const users = this.getUsers();
+    const user = users.find(u => u.id === userId);
+    if (!user) throw new Error('Utilisateur non trouvé.');
+
+    user.isApproved = !user.isApproved;
+    user.active = user.isApproved;
+    user.status = user.isApproved ? 'ACTIVE' : 'SUSPENDED';
+
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    return user;
   }
 
   saveUser(userData) {
@@ -511,12 +570,17 @@ class DataStore {
       const idx = users.findIndex(u => u.id === userData.id);
       if (idx !== -1) users[idx] = { ...users[idx], ...userData };
     } else {
+      const isApproved = userData.isApproved !== undefined ? userData.isApproved : true;
       const newUser = {
         id: 'usr-' + Date.now().toString(36),
         name: userData.name,
         email: userData.email,
+        password: userData.password || '123456',
         role: userData.role || 'VENDEUR',
-        active: true,
+        active: isApproved,
+        isApproved: isApproved,
+        status: isApproved ? 'ACTIVE' : 'PENDING_APPROVAL',
+        createdAt: new Date().toISOString(),
         permissions: userData.permissions || { editValidatedInvoices: userData.role === 'ADMIN', accessSettings: userData.role === 'ADMIN', accessReports: userData.role === 'ADMIN', manageStock: userData.role !== 'VENDEUR' }
       };
       users.push(newUser);

@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initThemeToggle();
   initGlobalSearch();
   
+  // Initialize Authentication & Session Check
+  checkAuthSession();
+
   // Set default view to dashboard
   switchView('dashboard');
 
@@ -256,6 +259,126 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+function checkAuthSession() {
+  const currentUser = window.store.getCurrentUser();
+  const loginScreen = document.getElementById('view-login');
+  const appContainer = document.querySelector('.app-container');
+
+  if (!currentUser) {
+    if (loginScreen) loginScreen.style.display = 'flex';
+    if (appContainer) appContainer.style.filter = 'blur(6px)';
+  } else {
+    if (loginScreen) loginScreen.style.display = 'none';
+    if (appContainer) appContainer.style.filter = 'none';
+
+    updateTopBarUserWidget(currentUser);
+  }
+}
+
+function updateTopBarUserWidget(user) {
+  if (!user) return;
+
+  const initialsEl = document.getElementById('user-avatar-circle');
+  const nameEl = document.getElementById('user-display-name');
+  const roleEl = document.getElementById('user-display-role');
+
+  const roleNames = {
+    'ADMIN': '👑 Administrateur',
+    'MAGASINIER': '📦 Magasinier',
+    'VENDEUR': '💼 Vendeur Commercial'
+  };
+
+  const nameParts = (user.name || 'User').split(' ');
+  const initials = nameParts.length >= 2 ? (nameParts[0][0] + nameParts[1][0]).toUpperCase() : user.name.substring(0, 2).toUpperCase();
+
+  if (initialsEl) initialsEl.textContent = initials;
+  if (nameEl) nameEl.textContent = user.name;
+  if (roleEl) roleEl.textContent = roleNames[user.role] || user.role;
+
+  const roleSelect = document.getElementById('user-role-select');
+  if (roleSelect) roleSelect.value = user.role;
+}
+
+function handleAuthLoginSubmit(e) {
+  e.preventDefault();
+  const emailInput = document.getElementById('login-email');
+  const pwdInput = document.getElementById('login-password');
+  const rememberCheck = document.getElementById('login-remember');
+  const errorAlert = document.getElementById('auth-error-alert');
+
+  if (errorAlert) errorAlert.style.display = 'none';
+
+  try {
+    const user = window.store.authenticateUser(emailInput.value, pwdInput.value);
+    window.store.setCurrentUser(user, rememberCheck ? rememberCheck.checked : true);
+
+    showToast(`Bienvenue, ${user.name} ! Connexion réussie.`, 'success');
+    checkAuthSession();
+    switchView('dashboard');
+  } catch (err) {
+    if (errorAlert) {
+      errorAlert.style.display = 'block';
+      errorAlert.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(err.message)}`;
+    }
+  }
+}
+
+function handleAuthLogout() {
+  if (confirm('Voulez-vous vous déconnecter de votre session ?')) {
+    window.store.logout();
+    showToast('Déconnexion de session réussie.', 'info');
+    checkAuthSession();
+  }
+}
+
+function quickFillLogin(email, password) {
+  const emailInput = document.getElementById('login-email');
+  const pwdInput = document.getElementById('login-password');
+  if (emailInput) emailInput.value = email;
+  if (pwdInput) pwdInput.value = password;
+
+  const form = document.getElementById('auth-login-form');
+  if (form) form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+}
+
+function togglePasswordVisibility(inputId) {
+  const input = document.getElementById(inputId);
+  const icon = document.getElementById('toggle-pwd-icon');
+  if (!input) return;
+
+  if (input.type === 'password') {
+    input.type = 'text';
+    if (icon) icon.className = 'fa-solid fa-eye-slash';
+  } else {
+    input.type = 'password';
+    if (icon) icon.className = 'fa-solid fa-eye';
+  }
+}
+
+function openNewUserModal() {
+  const form = document.getElementById('user-create-form');
+  if (form) form.reset();
+  openModal('modal-user-create');
+}
+
+function handleUserCreateSubmit(e) {
+  e.preventDefault();
+  const name = document.getElementById('user-new-name').value.trim();
+  const email = document.getElementById('user-new-email').value.trim();
+  const password = document.getElementById('user-new-password').value.trim();
+  const role = document.getElementById('user-new-role').value;
+  const isApproved = document.getElementById('user-new-approved').checked;
+
+  try {
+    window.store.saveUser({ name, email, password, role, isApproved });
+    showToast(`Compte pour "${name}" créé avec succès !`, 'success');
+    closeModal('modal-user-create');
+    if (window.renderAdminConsole) window.renderAdminConsole('users');
+  } catch (err) {
+    showToast(err.message, 'danger');
+  }
+}
+
 window.switchView = switchView;
 window.switchUserRole = switchUserRole;
 window.openModal = openModal;
@@ -264,3 +387,10 @@ window.showToast = showToast;
 window.toggleNotificationDrawer = toggleNotificationDrawer;
 window.escapeHtml = escapeHtml;
 window.toggleMobileSidebar = toggleMobileSidebar;
+window.checkAuthSession = checkAuthSession;
+window.handleAuthLoginSubmit = handleAuthLoginSubmit;
+window.handleAuthLogout = handleAuthLogout;
+window.quickFillLogin = quickFillLogin;
+window.togglePasswordVisibility = togglePasswordVisibility;
+window.openNewUserModal = openNewUserModal;
+window.handleUserCreateSubmit = handleUserCreateSubmit;
