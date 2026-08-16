@@ -418,12 +418,27 @@ function onInvoiceProductChange(selectEl, rowId) {
 function calculateInvoiceTotals(source = 'ITEMS') {
   const rows = document.querySelectorAll('#invoice-items-rows .form-grid');
   let subtotal = 0;
+  let totalHaqqiQty = 0;
+  let haqqiStandardTotal = 0;
 
   rows.forEach(r => {
     const qty = parseInt(r.querySelector('.inv-qty-input')?.value, 10) || 0;
     const price = parseFloat(r.querySelector('.inv-price-input')?.value) || 0;
     const rowTotal = qty * price;
     subtotal += rowTotal;
+
+    const selectEl = r.querySelector('.inv-prod-select');
+    let isHaqqi = false;
+
+    if (selectEl) {
+      const prodText = (selectEl.options[selectEl.selectedIndex]?.text || '').toLowerCase();
+      if (prodText.includes('haqqi')) isHaqqi = true;
+    }
+
+    if (isHaqqi) {
+      totalHaqqiQty += qty;
+      haqqiStandardTotal += rowTotal;
+    }
 
     const rowTotalInput = r.querySelector('.inv-row-total');
     if (rowTotalInput) rowTotalInput.value = window.formatFCFA(rowTotal);
@@ -432,9 +447,34 @@ function calculateInvoiceTotals(source = 'ITEMS') {
   const discountInput = document.getElementById('inv-discount');
   const vatRateInput = document.getElementById('inv-vat-rate');
   const customTotalInput = document.getElementById('inv-custom-total');
+  const haqqiNoticeEl = document.getElementById('inv-haqqi-promo-notice');
 
   let discount = parseFloat(discountInput?.value) || 0;
   let vatRate = parseFloat(vatRateInput?.value) || 0;
+
+  // Apply automatic HAQQI 3-pack promo (3 items = 10,000 FCFA Net, TVA = 0% on HAQQI promo)
+  if (totalHaqqiQty >= 3) {
+    const bundles = Math.floor(totalHaqqiQty / 3);
+    const remainder = totalHaqqiQty % 3;
+    const targetHaqqiNet = (bundles * 10000) + (remainder * 3500);
+    const haqqiDiscountNeeded = Math.max(haqqiStandardTotal - targetHaqqiNet, 0);
+
+    if (source === 'ITEMS' && discountInput) {
+      discount = haqqiDiscountNeeded;
+      discountInput.value = Math.round(discount);
+    }
+
+    if (haqqiNoticeEl) {
+      haqqiNoticeEl.style.display = 'block';
+      haqqiNoticeEl.innerHTML = `
+        <div style="background: rgba(236, 72, 153, 0.15); border: 1px solid rgba(236, 72, 153, 0.4); border-radius: var(--radius-md); padding: 0.65rem 0.85rem; color: #ec4899; font-size: 0.85rem; margin-top: 0.75rem; margin-bottom: 0.25rem;">
+          <i class="fa-solid fa-gift"></i> <strong>OFFRE SPÉCIALE HAQQI ACTIVÉE :</strong> ${totalHaqqiQty} Parfum(s) HAQQI (<strong>${bundles} Lot(s) de 3 à 10 000 FCFA Net Sans TVA</strong>). Total HAQQI : <strong>${window.formatFCFA(targetHaqqiNet)} Net</strong>.
+        </div>
+      `;
+    }
+  } else if (haqqiNoticeEl) {
+    haqqiNoticeEl.style.display = 'none';
+  }
 
   if (source === 'CUSTOM' && customTotalInput) {
     const customTotal = parseFloat(customTotalInput.value) || 0;

@@ -185,9 +185,34 @@ const HAQQI_HOMME_PRODUCTS = [
   { id: 'haq-h16', sku: 'HAQ-H16', name: 'HAQQI - Kirke', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Homme - Offre 3 Parfums 10.000 FCFA' },
   { id: 'haq-h17', sku: 'HAQ-H17', name: 'HAQQI - Baccarat Rouge 540 Extrait', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Homme - Offre 3 Parfums 10.000 FCFA' },
   { id: 'haq-h18', sku: 'HAQ-H18', name: 'HAQQI - Oud Satin Mood', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Homme - Offre 3 Parfums 10.000 FCFA' },
-  { id: 'haq-h19', sku: 'HAQ-H19', name: 'HAQQI - Tom Ford White Patchouli', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Homme - Offre 3 Parfums 10.000 FCFA' },
-  { id: 'haq-h20', sku: 'HAQ-H20', name: 'HAQQI - Tom Ford Ombré Leather', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Homme - Offre 3 Parfums 10.000 FCFA' }
+  { id: 'haq-h19', sku: 'HAQ-H19', name: 'HAQQI - Tom Ford White Patchouli', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Homme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-h20', sku: 'HAQ-H20', name: 'HAQQI - Tom Ford Ombré Leather', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Homme - Offre 3 Parfums 10.000 FCFA Net' }
 ];
+
+const HAQQI_FEMME_PRODUCTS = [
+  { id: 'haq-f01', sku: 'HAQ-F01', name: 'HAQQI - Libre (YSL)', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f02', sku: 'HAQ-F02', name: 'HAQQI - La Vie Est Belle', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f03', sku: 'HAQ-F03', name: 'HAQQI - Black Opium', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f04', sku: 'HAQ-F04', name: 'HAQQI - Coco Mademoiselle', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f05', sku: 'HAQ-F05', name: 'HAQQI - Baccarat Rouge 540 (Femme)', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f06', sku: 'HAQ-F06', name: 'HAQQI - J\'adore (Dior)', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f07', sku: 'HAQ-F07', name: 'HAQQI - Good Girl', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f08', sku: 'HAQ-F08', name: 'HAQQI - Scandal', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f09', sku: 'HAQ-F09', name: 'HAQQI - Sì (Armani)', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f10', sku: 'HAQ-F10', name: 'HAQQI - Hypnotic Poison', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f11', sku: 'HAQ-F11', name: 'HAQQI - Chance Chanel', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f12', sku: 'HAQ-F12', name: 'HAQQI - Mon Paris', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f13', sku: 'HAQ-F13', name: 'HAQQI - Alien (Mugler)', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f14', sku: 'HAQ-F14', name: 'HAQQI - Delina', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f15', sku: 'HAQ-F15', name: 'HAQQI - L\'Interdit', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f16', sku: 'HAQ-F16', name: 'HAQQI - Miss Dior', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f17', sku: 'HAQ-F17', name: 'HAQQI - Irrésistible', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f18', sku: 'HAQ-F18', name: 'HAQQI - Lady Million', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f19', sku: 'HAQ-F19', name: 'HAQQI - Flowerbomb', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' },
+  { id: 'haq-f20', sku: 'HAQ-F20', name: 'HAQQI - Velvet Rose & Oud', categoryId: 'cat-haqqi', quantity: 15, minStock: 3, buyPrice: 2200, sellPrice: 3500, location: 'Rayon Parfumerie HAQQI', notes: 'Eau de parfum HAQQI pour Femme - Offre 3 Parfums 10.000 FCFA Net' }
+];
+
+const HAQQI_ALL_PRODUCTS = [...HAQQI_HOMME_PRODUCTS, ...HAQQI_FEMME_PRODUCTS];
 
 const INITIAL_SUPPLIERS = [
   { id: 'sup-1', name: 'TechGlobal Distribution', contact: 'Marc Dupont', email: 'contact@techglobal.ci', phone: '+225 07 45 89 66 00' },
@@ -429,7 +454,7 @@ class DataStore {
     const products = this.getProducts();
     let updated = false;
 
-    HAQQI_HOMME_PRODUCTS.forEach(hp => {
+    HAQQI_ALL_PRODUCTS.forEach(hp => {
       const exists = products.some(p => p.sku === hp.sku || p.name.toLowerCase() === hp.name.toLowerCase());
       if (!exists) {
         products.push({
@@ -449,7 +474,7 @@ class DataStore {
   resetDemoData() {
     localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(INITIAL_CATEGORIES));
     localStorage.setItem(STORAGE_KEYS.SUPPLIERS, JSON.stringify(INITIAL_SUPPLIERS));
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify([...INITIAL_PRODUCTS, ...HAQQI_HOMME_PRODUCTS]));
+    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify([...INITIAL_PRODUCTS, ...HAQQI_ALL_PRODUCTS]));
     localStorage.setItem(STORAGE_KEYS.MOVEMENTS, JSON.stringify(INITIAL_MOVEMENTS));
     localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(INITIAL_INVOICES));
     localStorage.setItem(STORAGE_KEYS.PURCHASE_ORDERS, JSON.stringify(INITIAL_PURCHASE_ORDERS));
