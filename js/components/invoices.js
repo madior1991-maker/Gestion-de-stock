@@ -1106,12 +1106,8 @@ function sendWhatsAppMessageFromModal() {
     return;
   }
 
-  const msgText = document.getElementById('wa-message-preview')?.value || '';
-  const encodedMsg = encodeURIComponent(msgText);
-  const waUrl = `https://wa.me/${formattedPhone}?text=${encodedMsg}`;
-
-  window.open(waUrl, '_blank');
-  showToast(`Redirection WhatsApp vers +${formattedPhone}...`, 'success');
+  // Generate single-page A4 PDF file & send via Web Share API or download + open WhatsApp
+  shareInvoicePDFWhatsApp();
 }
 
 function copyWhatsAppMessageToClipboard() {
