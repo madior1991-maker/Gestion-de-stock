@@ -1139,10 +1139,10 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
 }
 
-/* ULTRA CLEAN SINGLE PAGE A4 PRINT OPTIMIZATION (@media print) */
+/* ULTRA CLEAN STRICT 1-PAGE A4 PRINT OPTIMIZATION (@media print) */
 @page {
   size: A4 portrait;
-  margin: 8mm;
+  margin: 4mm;
 }
 
 @media print {
@@ -1179,6 +1179,8 @@ h1, h2, h3, h4, h5, h6 {
     margin: 0 !important;
     overflow: hidden !important;
     page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
   }
 
   .modal-backdrop.active .modal-card {
@@ -1192,6 +1194,8 @@ h1, h2, h3, h4, h5, h6 {
     margin: 0 !important;
     overflow: hidden !important;
     page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
   }
 
   #printable-invoice-content,
@@ -1199,10 +1203,15 @@ h1, h2, h3, h4, h5, h6 {
   #printable-dashboard-report {
     background: #ffffff !important;
     color: #000000 !important;
-    padding: 0 !important;
-    font-size: 11pt !important;
-    line-height: 1.3 !important;
+    padding: 3mm !important;
+    font-size: 10pt !important;
+    line-height: 1.2 !important;
+    max-height: 285mm !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
     page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
   }
 
   #printable-invoice-content *,
@@ -1212,6 +1221,7 @@ h1, h2, h3, h4, h5, h6 {
     background-color: transparent !important;
     border-color: #cbd5e1 !important;
     box-shadow: none !important;
+    page-break-inside: avoid !important;
   }
 
   #printable-invoice-content table,
@@ -1219,7 +1229,7 @@ h1, h2, h3, h4, h5, h6 {
   #printable-dashboard-report table {
     width: 100% !important;
     border-collapse: collapse !important;
-    margin-bottom: 0.8rem !important;
+    margin-bottom: 0.4rem !important;
   }
 
   #printable-invoice-content th,
@@ -1228,21 +1238,21 @@ h1, h2, h3, h4, h5, h6 {
     background-color: #f1f5f9 !important;
     color: #000000 !important;
     font-weight: bold !important;
-    padding: 0.4rem 0.6rem !important;
+    padding: 0.25rem 0.4rem !important;
     border-bottom: 2px solid #000000 !important;
   }
 
   #printable-invoice-content td,
   #printable-po-content td,
   #printable-dashboard-report td {
-    padding: 0.4rem 0.6rem !important;
+    padding: 0.25rem 0.4rem !important;
     border-bottom: 1px solid #cbd5e1 !important;
   }
 
   #printable-invoice-content img,
   #printable-po-content img,
   #printable-dashboard-report img {
-    max-height: 65px !important;
+    max-height: 52px !important;
     display: block !important;
   }
 }

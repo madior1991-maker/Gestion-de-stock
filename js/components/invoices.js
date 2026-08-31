@@ -694,17 +694,22 @@ function viewInvoiceDetail(invoiceId) {
   const qrData = encodeURIComponent(`2M GLOBAL SERVICES | Facture #${inv.number} | Client: ${inv.clientName} | Total: ${inv.totalAmount} FCFA | Date: ${formattedDate}`);
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${qrData}`;
 
+  const itemCount = inv.items.length;
+  const tableCellPadding = itemCount > 8 ? '0.18rem 0.3rem' : (itemCount > 5 ? '0.22rem 0.35rem' : '0.28rem 0.4rem');
+  const tableFontSize = itemCount > 8 ? '0.72rem' : (itemCount > 5 ? '0.75rem' : '0.78rem');
+  const sectionSpacing = itemCount > 8 ? '0.45rem' : (itemCount > 5 ? '0.55rem' : '0.65rem');
+
   const itemRowsHtml = inv.items.map((item, idx) => {
     const prod = item.productId ? window.store.getProductById(item.productId) : null;
     const sku = prod ? prod.sku : (isService ? 'SERV-' + (idx + 1).toString().padStart(2, '0') : 'REF-' + (idx + 1));
     return `
       <tr>
-        <td style="padding: 0.4rem; text-align: center; border-bottom: 1px solid var(--border-color);">${idx + 1}</td>
-        <td style="padding: 0.4rem; font-family: monospace; font-size: 0.8rem; color: var(--accent-primary); border-bottom: 1px solid var(--border-color);">${escapeHtml(sku)}</td>
-        <td style="padding: 0.4rem; border-bottom: 1px solid var(--border-color);"><strong>${escapeHtml(item.productName)}</strong></td>
-        <td style="padding: 0.4rem; text-align: center; border-bottom: 1px solid var(--border-color);">${item.quantity}</td>
-        <td style="padding: 0.4rem; text-align: right; border-bottom: 1px solid var(--border-color);">${window.formatFCFA(item.unitPrice)}</td>
-        <td style="padding: 0.4rem; text-align: right; border-bottom: 1px solid var(--border-color);"><strong>${window.formatFCFA(item.total)}</strong></td>
+        <td style="padding: ${tableCellPadding}; text-align: center; border-bottom: 1px solid var(--border-color);">${idx + 1}</td>
+        <td style="padding: ${tableCellPadding}; font-family: monospace; font-size: ${tableFontSize}; color: var(--accent-primary); border-bottom: 1px solid var(--border-color);">${escapeHtml(sku)}</td>
+        <td style="padding: ${tableCellPadding}; border-bottom: 1px solid var(--border-color);"><strong>${escapeHtml(item.productName)}</strong></td>
+        <td style="padding: ${tableCellPadding}; text-align: center; border-bottom: 1px solid var(--border-color);">${item.quantity}</td>
+        <td style="padding: ${tableCellPadding}; text-align: right; border-bottom: 1px solid var(--border-color);">${window.formatFCFA(item.unitPrice)}</td>
+        <td style="padding: ${tableCellPadding}; text-align: right; border-bottom: 1px solid var(--border-color);"><strong>${window.formatFCFA(item.total)}</strong></td>
       </tr>
     `;
   }).join('');
@@ -712,14 +717,14 @@ function viewInvoiceDetail(invoiceId) {
   let stampHtml = '';
   if (settings.companyStamp) {
     stampHtml = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
-        <img src="${settings.companyStamp}" alt="Cachet Électronique Officiel" style="max-height: 75px; max-width: 160px; object-fit: contain; background: #fff; padding: 2px; border-radius: 4px; border: 1px solid #ccc;">
-        <span style="font-size: 0.65rem; color: var(--success); font-weight: 700;">Cachet Électronique Authentifié</span>
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;">
+        <img src="${settings.companyStamp}" alt="Cachet Électronique Officiel" style="max-height: 48px; max-width: 140px; object-fit: contain; background: #fff; padding: 2px; border-radius: 4px; border: 1px solid #ccc;">
+        <span style="font-size: 0.6rem; color: var(--success); font-weight: 700;">Cachet Électronique Authentifié</span>
       </div>
     `;
   } else {
     stampHtml = `
-      <div style="height: 60px; border: 1px dashed var(--border-color); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.75rem;">
+      <div style="height: 42px; border: 1px dashed var(--border-color); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.7rem;">
         Cachet Électronique
       </div>
     `;
@@ -727,22 +732,22 @@ function viewInvoiceDetail(invoiceId) {
 
   const rightBoxHtml = isProforma ? `
     <div style="text-align: right; display: flex; flex-direction: column; justify-content: center; align-items: flex-end;">
-      <span class="badge badge-info" style="font-size: 0.85rem; padding: 0.35rem 0.85rem;"><i class="fa-solid fa-file-lines"></i> DEVIS PROFORMA</span>
-      <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem;">Offre de prix sans engagement commercial</span>
+      <span class="badge badge-info" style="font-size: 0.78rem; padding: 0.25rem 0.65rem;"><i class="fa-solid fa-file-lines"></i> DEVIS PROFORMA</span>
+      <span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">Offre de prix sans engagement commercial</span>
     </div>
   ` : `
     <div style="text-align: right;">
-      <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">MODALITÉS DE RÈGLEMENT :</span>
-      <p style="font-size: 0.9rem; color: var(--text-primary); font-weight: 600; margin-top: 0.1rem;">Mode: <strong>${escapeHtml(inv.paymentMethod || 'Virement bancaire')}</strong></p>
-      <div style="margin-top: 0.35rem;">
-        ${inv.status === 'PAID' ? '<span class="badge badge-success" style="font-size: 0.78rem; padding: 0.25rem 0.65rem;"><i class="fa-solid fa-circle-check"></i> FACTURE PAYÉE</span>' : '<span class="badge badge-warning" style="font-size: 0.78rem; padding: 0.25rem 0.65rem;"><i class="fa-solid fa-clock"></i> EN ATTENTE DE RÈGLEMENT</span>'}
+      <span style="font-size: 0.68rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">MODALITÉS DE RÈGLEMENT :</span>
+      <p style="font-size: 0.82rem; color: var(--text-primary); font-weight: 600; margin-top: 0.1rem; margin-bottom: 0.2rem;">Mode: <strong>${escapeHtml(inv.paymentMethod || 'Virement bancaire')}</strong></p>
+      <div>
+        ${inv.status === 'PAID' ? '<span class="badge badge-success" style="font-size: 0.72rem; padding: 0.2rem 0.55rem;"><i class="fa-solid fa-circle-check"></i> FACTURE PAYÉE</span>' : '<span class="badge badge-warning" style="font-size: 0.72rem; padding: 0.2rem 0.55rem;"><i class="fa-solid fa-clock"></i> EN ATTENTE DE RÈGLEMENT</span>'}
       </div>
     </div>
   `;
 
   const logoImgHtml = settings.companyLogo ?
-    `<img src="${settings.companyLogo}" alt="2M GLOBAL SERVICES" style="max-height: 65px; max-width: 200px; object-fit: contain; margin-bottom: 0.35rem; display: block;">` :
-    `<h2 style="font-size: 1.4rem; color: var(--accent-primary); font-weight: 800; margin-bottom: 0.2rem;">${escapeHtml(settings.companyName)}</h2>`;
+    `<img src="${settings.companyLogo}" alt="2M GLOBAL SERVICES" style="max-height: 52px; max-width: 180px; object-fit: contain; margin-bottom: 0.2rem; display: block;">` :
+    `<h2 style="font-size: 1.2rem; color: var(--accent-primary); font-weight: 800; margin-bottom: 0.1rem;">${escapeHtml(settings.companyName)}</h2>`;
 
   const headerDateHtml = isProforma ?
     `Date: <strong>${formattedDate}</strong>` :
@@ -755,60 +760,60 @@ function viewInvoiceDetail(invoiceId) {
   const line2 = settings.invoiceFooterLine2 || 'Adresse: LIBERTE O1 VILLA N• 1336 - 📧 E-MAIL: 2mglobalservices11@gmail.COM - ☎️ Tél: 76-192-34-41';
 
   detailContainer.innerHTML = `
-    <div style="padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-lg); border: 1px solid var(--border-color); font-size: 0.88rem; max-width: 800px; margin: 0 auto;">
+    <div style="padding: 1.1rem 1.25rem; background: var(--bg-secondary); border-radius: var(--radius-lg); border: 1px solid var(--border-color); font-size: 0.82rem; line-height: 1.25; max-width: 800px; margin: 0 auto; box-sizing: border-box; page-break-inside: avoid;">
       
       ${isProforma ? `
-        <div style="background: rgba(245, 158, 11, 0.15); border: 1px dashed #f59e0b; padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); margin-bottom: 1rem; text-align: center; color: #d97706; font-weight: 700; font-size: 0.8rem;">
+        <div style="background: rgba(245, 158, 11, 0.15); border: 1px dashed #f59e0b; padding: 0.35rem 0.65rem; border-radius: var(--radius-sm); margin-bottom: ${sectionSpacing}; text-align: center; color: #d97706; font-weight: 700; font-size: 0.75rem;">
           <i class="fa-solid fa-triangle-exclamation"></i> FACTURE PROFORMA - OFFRE DE PRIX SANS VALEUR COMPTABLE NI FISCALE
         </div>
       ` : ''}
 
       <!-- Company Header with Logo & QR Code -->
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid ${isProforma ? '#06b6d4' : (isService ? '#0284c7' : '#f97316')}; padding-bottom: 1rem; margin-bottom: 1rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid ${isProforma ? '#06b6d4' : (isService ? '#0284c7' : '#f97316')}; padding-bottom: 0.5rem; margin-bottom: ${sectionSpacing};">
         <div>
           ${logoImgHtml}
-          <h2 style="font-size: 1.15rem; color: #0284c7; font-weight: 800; margin-bottom: 0.15rem;">${escapeHtml(settings.companyName)}</h2>
-          <p style="color: var(--text-secondary); font-size: 0.82rem; margin-bottom: 0.1rem;">${escapeHtml(settings.companyAddress)}</p>
-          <p style="color: var(--text-secondary); font-size: 0.82rem; margin-bottom: 0.1rem;">Tél: ${escapeHtml(settings.companyPhone)} | Email: ${escapeHtml(settings.companyEmail)}</p>
-          <p style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600; margin-top: 0.2rem;">${escapeHtml(settings.companyTaxId)}</p>
+          <h2 style="font-size: 1.05rem; color: #0284c7; font-weight: 800; margin-bottom: 0.1rem;">${escapeHtml(settings.companyName)}</h2>
+          <p style="color: var(--text-secondary); font-size: 0.78rem; margin-bottom: 0.05rem;">${escapeHtml(settings.companyAddress)}</p>
+          <p style="color: var(--text-secondary); font-size: 0.78rem; margin-bottom: 0.05rem;">Tél: ${escapeHtml(settings.companyPhone)} | Email: ${escapeHtml(settings.companyEmail)}</p>
+          <p style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-top: 0.1rem;">${escapeHtml(settings.companyTaxId)}</p>
         </div>
 
-        <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem;">
-          <div style="display: flex; gap: 0.85rem; align-items: center;">
+        <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem;">
+          <div style="display: flex; gap: 0.65rem; align-items: center;">
             <div style="text-align: right;">
-              <h1 style="font-size: 1.35rem; letter-spacing: -0.03em; color: #0284c7; text-transform: uppercase; font-family: 'Outfit', sans-serif;">
+              <h1 style="font-size: 1.2rem; letter-spacing: -0.02em; color: #0284c7; text-transform: uppercase; font-family: 'Outfit', sans-serif; margin: 0;">
                 ${docTitle}
               </h1>
-              <div style="font-family: monospace; font-size: 1.1rem; color: ${isProforma ? '#06b6d4' : '#f97316'}; font-weight: 800;">N° ${escapeHtml(inv.number)}</div>
+              <div style="font-family: monospace; font-size: 0.98rem; color: ${isProforma ? '#06b6d4' : '#f97316'}; font-weight: 800;">N° ${escapeHtml(inv.number)}</div>
             </div>
-            ${showQr ? `<img src="${qrCodeUrl}" alt="QR Code d'Authenticité" style="width: 70px; height: 70px; background: #fff; padding: 3px; border-radius: 6px; border: 1px solid #ccc;">` : ''}
+            ${showQr ? `<img src="${qrCodeUrl}" alt="QR Code" style="width: 58px; height: 58px; background: #fff; padding: 2px; border-radius: 5px; border: 1px solid #ccc;">` : ''}
           </div>
-          <p style="font-size: 0.82rem; color: var(--text-secondary);">${headerDateHtml}</p>
+          <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 0;">${headerDateHtml}</p>
         </div>
       </div>
 
       <!-- Client & Payment Box -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; background: var(--bg-tertiary); padding: 0.85rem 1rem; border-radius: var(--radius-md); margin-bottom: 1rem;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; background: var(--bg-tertiary); padding: 0.55rem 0.85rem; border-radius: var(--radius-md); margin-bottom: ${sectionSpacing};">
         <div>
-          <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">CLIENT (DESTINATAIRE) :</span>
-          <h3 style="font-size: 1.05rem; color: var(--text-primary); margin-top: 0.1rem;">${escapeHtml(inv.clientName)}</h3>
-          ${inv.clientPhone ? `<p style="font-size: 0.82rem; color: var(--text-secondary);">Tél: ${escapeHtml(inv.clientPhone)}</p>` : ''}
-          ${inv.clientTaxId ? `<p style="font-size: 0.78rem; color: var(--text-muted);">${escapeHtml(inv.clientTaxId)}</p>` : ''}
+          <span style="font-size: 0.68rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">CLIENT (DESTINATAIRE) :</span>
+          <h3 style="font-size: 0.95rem; color: var(--text-primary); margin-top: 0.05rem; margin-bottom: 0.1rem;">${escapeHtml(inv.clientName)}</h3>
+          ${inv.clientPhone ? `<p style="font-size: 0.78rem; color: var(--text-secondary); margin: 0;">Tél: ${escapeHtml(inv.clientPhone)}</p>` : ''}
+          ${inv.clientTaxId ? `<p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">${escapeHtml(inv.clientTaxId)}</p>` : ''}
         </div>
 
         ${rightBoxHtml}
       </div>
 
       <!-- Items Table -->
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.85rem;">
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: ${sectionSpacing}; font-size: ${tableFontSize};">
         <thead>
-          <tr style="background: var(--bg-tertiary); text-transform: uppercase; font-size: 0.72rem; color: var(--text-secondary);">
-            <th style="padding: 0.5rem; text-align: center;">#</th>
-            <th style="padding: 0.5rem; text-align: left;">Réf SKU / Code</th>
-            <th style="padding: 0.5rem; text-align: left;">${tableColHeader}</th>
-            <th style="padding: 0.5rem; text-align: center;">Qté / Unité</th>
-            <th style="padding: 0.5rem; text-align: right;">Prix Unitaire HT</th>
-            <th style="padding: 0.5rem; text-align: right;">Montant Total HT</th>
+          <tr style="background: var(--bg-tertiary); text-transform: uppercase; font-size: 0.7rem; color: var(--text-secondary);">
+            <th style="padding: 0.35rem 0.4rem; text-align: center;">#</th>
+            <th style="padding: 0.35rem 0.4rem; text-align: left;">Réf SKU</th>
+            <th style="padding: 0.35rem 0.4rem; text-align: left;">${tableColHeader}</th>
+            <th style="padding: 0.35rem 0.4rem; text-align: center;">Qté</th>
+            <th style="padding: 0.35rem 0.4rem; text-align: right;">P.U HT</th>
+            <th style="padding: 0.35rem 0.4rem; text-align: right;">Total HT</th>
           </tr>
         </thead>
         <tbody>
@@ -817,34 +822,34 @@ function viewInvoiceDetail(invoiceId) {
       </table>
 
       <!-- Breakdown & Amount in Words -->
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-        <div style="flex: 1; max-width: 420px; background: var(--bg-tertiary); padding: 0.75rem 1rem; border-radius: var(--radius-md); border-left: 3px solid ${isProforma ? '#06b6d4' : '#f97316'};">
-          <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">ARRÊTÉ LA PRÉSENTE FACTURE À LA SOMME DE :</span>
-          <p style="font-weight: 700; color: var(--text-primary); margin-top: 0.25rem; font-style: italic; font-size: 0.85rem; line-height: 1.3;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: ${sectionSpacing}; gap: 0.75rem;">
+        <div style="flex: 1; max-width: 420px; background: var(--bg-tertiary); padding: 0.55rem 0.85rem; border-radius: var(--radius-md); border-left: 3px solid ${isProforma ? '#06b6d4' : '#f97316'};">
+          <span style="font-size: 0.68rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">ARRÊTÉ LA PRÉSENTE FACTURE À LA SOMME DE :</span>
+          <p style="font-weight: 700; color: var(--text-primary); margin-top: 0.2rem; margin-bottom: 0; font-style: italic; font-size: 0.8rem; line-height: 1.25;">
             « ${escapeHtml(amountInWords)} »
           </p>
         </div>
 
-        <div style="width: 300px; background: var(--bg-tertiary); padding: 0.85rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem; font-size: 0.82rem;">
+        <div style="width: 270px; background: var(--bg-tertiary); padding: 0.55rem 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem; font-size: 0.78rem;">
             <span>Sous-Total HT :</span>
             <strong>${window.formatFCFA(inv.subtotal)}</strong>
           </div>
           ${inv.discountAmount > 0 ? `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem; font-size: 0.82rem; color: var(--warning);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem; font-size: 0.78rem; color: var(--warning);">
               <span>Remise Accordée :</span>
               <strong>-${window.formatFCFA(inv.discountAmount)}</strong>
             </div>
           ` : ''}
-          <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem; font-size: 0.82rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem; font-size: 0.78rem;">
             <span>Net HT :</span>
             <strong>${window.formatFCFA(inv.netSubtotal || (inv.subtotal - (inv.discountAmount || 0)))}</strong>
           </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.82rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem; font-size: 0.78rem;">
             <span>TVA (${inv.vatRate || 18}%) :</span>
             <strong>${window.formatFCFA(inv.vatAmount)}</strong>
           </div>
-          <div style="display: flex; justify-content: space-between; border-top: 2px solid #0284c7; padding-top: 0.5rem; font-size: 1.1rem; color: var(--text-primary);">
+          <div style="display: flex; justify-content: space-between; border-top: 2px solid #0284c7; padding-top: 0.35rem; font-size: 1rem; color: var(--text-primary);">
             <strong>TOTAL TTC :</strong>
             <strong style="color: #0284c7;">${window.formatFCFA(inv.totalAmount)}</strong>
           </div>
@@ -852,24 +857,24 @@ function viewInvoiceDetail(invoiceId) {
       </div>
 
       ${inv.notes ? `
-        <div style="background: var(--bg-tertiary); padding: 0.6rem 1rem; border-radius: var(--radius-md); font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">
-          <strong>Remarques / Conditions de la Prestation :</strong> ${escapeHtml(inv.notes)}
+        <div style="background: var(--bg-tertiary); padding: 0.45rem 0.75rem; border-radius: var(--radius-md); font-size: 0.75rem; color: var(--text-secondary); margin-bottom: ${sectionSpacing};">
+          <strong>Remarques / Conditions :</strong> ${escapeHtml(inv.notes)}
         </div>
       ` : ''}
 
       <!-- Official Bank RIB & Mobile Money Payment Modalities Block -->
-      <div style="margin-top: 1rem; background: var(--bg-tertiary); padding: 0.85rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 0.8rem; line-height: 1.4;">
-        <h4 style="font-size: 0.82rem; color: var(--accent-primary); text-transform: uppercase; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+      <div style="margin-top: ${sectionSpacing}; background: var(--bg-tertiary); padding: 0.55rem 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 0.75rem; line-height: 1.3;">
+        <h4 style="font-size: 0.75rem; color: var(--accent-primary); text-transform: uppercase; font-weight: 700; margin-bottom: 0.35rem; margin-top: 0; display: flex; align-items: center; gap: 0.35rem;">
           <i class="fa-solid fa-building-columns"></i> MODALITÉS DE RÈGLEMENT & COORDONNÉES BANCAIRES
         </h4>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
           <!-- Bank & Check Wire Details -->
-          <div style="border-right: 1px solid var(--border-color); padding-right: 0.75rem;">
-            <p style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
+          <div style="border-right: 1px solid var(--border-color); padding-right: 0.5rem;">
+            <p style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.15rem; margin-top: 0;">
               <i class="fa-solid fa-money-check-dollar" style="color: var(--success);"></i> Par virement bancaire ou chèque :
             </p>
-            <div style="font-size: 0.78rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.15rem;">
+            <div style="font-size: 0.73rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.1rem;">
               <div><strong>Banque :</strong> CBAO</div>
               <div><strong>IBAN :</strong> <span style="font-family: monospace; font-weight: 700; color: var(--text-primary);">SN08 SN012 012120 35207043601 08</span></div>
               <div><strong>Code SWIFT :</strong> <span style="font-family: monospace; font-weight: 700; color: var(--text-primary);">CBAOSNDA</span></div>
@@ -878,10 +883,10 @@ function viewInvoiceDetail(invoiceId) {
 
           <!-- Mobile Money Details (Wave / Orange Money) -->
           <div>
-            <p style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
+            <p style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.15rem; margin-top: 0;">
               <i class="fa-solid fa-mobile-screen-button" style="color: #0284c7;"></i> Par Wave ou Orange Money :
             </p>
-            <div style="font-size: 0.78rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.15rem;">
+            <div style="font-size: 0.73rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.1rem;">
               <div>📲 <strong>+221 77 171 51 29</strong></div>
               <div>📲 <strong>+221 76 192 34 41</strong></div>
             </div>
@@ -890,21 +895,21 @@ function viewInvoiceDetail(invoiceId) {
       </div>
 
       <!-- Signatures & Electronic Stamp Box -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.25rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-top: 0.55rem; border-top: 1px solid var(--border-color); padding-top: 0.45rem;">
         <div style="text-align: center;">
-          <p style="font-weight: 700; color: var(--text-primary); font-size: 0.8rem; text-transform: uppercase;">Pour le Client (Signature)</p>
-          <div style="height: 60px; margin-top: 0.35rem; border: 1px dashed var(--border-color); border-radius: var(--radius-md);"></div>
+          <p style="font-weight: 700; color: var(--text-primary); font-size: 0.75rem; text-transform: uppercase; margin: 0;">Pour le Client (Signature)</p>
+          <div style="height: 42px; margin-top: 0.25rem; border: 1px dashed var(--border-color); border-radius: var(--radius-md);"></div>
         </div>
         <div style="text-align: center;">
-          <p style="font-weight: 700; color: var(--text-primary); font-size: 0.8rem; text-transform: uppercase; margin-bottom: 0.35rem;">Pour 2M GLOBAL SERVICES (Signature & Cachet)</p>
+          <p style="font-weight: 700; color: var(--text-primary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem; margin-top: 0;">Pour 2M GLOBAL SERVICES (Signature & Cachet)</p>
           ${stampHtml}
         </div>
       </div>
 
       <!-- Official 2M GLOBAL SERVICES Legal Footer -->
-      <div style="margin-top: 1.25rem; border-top: 1px solid var(--border-color); padding-top: 0.65rem; text-align: center; font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; line-height: 1.4;">
+      <div style="margin-top: 0.5rem; border-top: 1px solid var(--border-color); padding-top: 0.45rem; text-align: center; font-size: 0.68rem; color: var(--text-secondary); font-weight: 500; line-height: 1.3;">
         <p style="margin: 0; font-weight: 700; color: var(--text-primary);">${escapeHtml(line1)}</p>
-        <p style="margin: 3px 0 0 0;">${escapeHtml(line2)}</p>
+        <p style="margin: 2px 0 0 0;">${escapeHtml(line2)}</p>
       </div>
 
     </div>
@@ -1132,11 +1137,12 @@ function downloadInvoicePDF(invoiceId) {
   showToast(`Génération du fichier PDF pour la Facture #${inv.number}...`, 'info');
 
   const opt = {
-    margin: [6, 6, 6, 6],
+    margin: [4, 4, 4, 4],
     filename: `Facture_${inv.number}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, logging: false },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: 'avoid-all' }
   };
 
   if (window.html2pdf) {
@@ -1175,11 +1181,12 @@ async function shareInvoicePDFWhatsApp() {
   if (!element) return;
 
   const opt = {
-    margin: [6, 6, 6, 6],
+    margin: [4, 4, 4, 4],
     filename: `Facture_${inv.number}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, logging: false },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: 'avoid-all' }
   };
 
   try {
